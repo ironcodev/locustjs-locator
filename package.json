@@ -1,0 +1,30 @@
+{
+  "name": "locustjs-locator",
+  "version": "1.0.0",
+  "description": "A locustjs library implementing Service Locator pattern to provide loose coupling through IoC (inversion of control).",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ironcodev/locustjs-locator.git"
+  },
+  "keywords": [
+    "javascript",
+    "locustjs",
+    "IoC",
+    "Inversion of Control",
+    "loose coupling",
+    "weak coupling"
+  ],
+  "author": "Iron Code",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ironcodev/locustjs-locator/issues"
+  },
+  "homepage": "https://github.com/ironcodev/locustjs-locator#readme",
+  "devDependencies": {},
+  "dependencies": {
+    "locustjs-base": "^1.0.3",
+    "locustjs-extensions-object": "^1.0.7"
+  }
+}
