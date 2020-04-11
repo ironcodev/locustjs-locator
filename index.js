@@ -240,7 +240,7 @@ class DefaultLocator extends LocatorBase {
         return result;
     }
     resolve(abstraction, ...args) {
-        this.resolveBy(abstraction, null, ...args)
+        return this.resolveBy(abstraction, null, ...args)
     }
 }
 

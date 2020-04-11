@@ -1,6 +1,6 @@
 {
   "name": "locustjs-locator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A locustjs library implementing Service Locator pattern to provide loose coupling through IoC (inversion of control).",
   "main": "index.js",
   "scripts": {},
