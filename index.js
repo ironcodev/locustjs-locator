@@ -41,11 +41,25 @@ class LocatorBase {
     }
 }
 
+class DefaultStorage {
+	constructor() {
+		this._data = {};
+	}
+	getItem(key) {
+		return this._data[key];
+	}
+	setItem(key, value) {
+		this._data[key] = value;
+	}
+}
+
 class DefaultLocator extends LocatorBase {
     constructor() {
         super();
 
-        this.__entries = []
+        this.__entries = [];
+		this.__localStorage = (window && window.localStorage) || new DefaultStorage();
+		this.__sessionStorage = (window && window.sessionStorage) || new DefaultStorage();
     }
     _validateAbstraction(abstraction) {
         if (!isFunction(abstraction)) {
@@ -211,7 +225,7 @@ class DefaultLocator extends LocatorBase {
 
                     break;
                 case Resolve.PerSession:
-                    storage = window.sessionStorage;
+                    storage = this.__sessionStorage;
 
                     result = this._getStoredInstance(entry, storage);
 
@@ -223,7 +237,7 @@ class DefaultLocator extends LocatorBase {
 
                     break;
                 case Resolve.PerApp:
-                    storage = window.localStorage;
+                    storage = this.__localStorage;
 
                     result = this._getStoredInstance(entry, storage);
 
