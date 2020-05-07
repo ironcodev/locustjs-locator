@@ -1,8 +1,7 @@
 {
   "name": "locustjs-locator",
   "version": "1.0.4",
-  "description": "A locustjs library implementing Service Locator pattern to provide loose coupling through IoC (inversion of 
-control).",
+  "description": "A locustjs library implementing Service Locator pattern to provide loose coupling through IoC (Inversion of Control).",
   "main": "index.cjs.js",
   "module": "index.esm.js",
   "scripts": {},
