@@ -58,8 +58,8 @@ class DefaultLocator extends LocatorBase {
         super();
 
         this.__entries = [];
-		this.__localStorage = (window && window.localStorage) || new DefaultStorage();
-		this.__sessionStorage = (window && window.sessionStorage) || new DefaultStorage();
+		this.__localStorage = (typeof window !== 'undefined' && window.localStorage) || new DefaultStorage();
+		this.__sessionStorage = (typeof window !== 'undefined' && window.sessionStorage) || new DefaultStorage();
     }
     _validateAbstraction(abstraction) {
         if (!isFunction(abstraction)) {

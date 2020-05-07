@@ -153,8 +153,8 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
 
     _this = _super.call(this);
     _this.__entries = [];
-    _this.__localStorage = window && window.localStorage || new DefaultStorage();
-    _this.__sessionStorage = window && window.sessionStorage || new DefaultStorage();
+    _this.__localStorage = typeof window !== 'undefined' && window.localStorage || new DefaultStorage();
+    _this.__sessionStorage = typeof window !== 'undefined' && window.sessionStorage || new DefaultStorage();
     return _this;
   }
 
