@@ -1,6 +1,6 @@
 {
   "name": "locustjs-locator",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A locustjs library implementing Service Locator pattern to provide loose coupling through IoC (Inversion of Control).",
   "main": "index.cjs.js",
   "module": "index.esm.js",
@@ -25,7 +25,6 @@
   "homepage": "https://github.com/ironcodev/locustjs-locator#readme",
   "devDependencies": {},
   "dependencies": {
-    "locustjs-base": "^1.0.4",
-    "locustjs-extensions-object": "^1.0.8"
+    "locustjs-base": "^1.0.5"
   }
 }

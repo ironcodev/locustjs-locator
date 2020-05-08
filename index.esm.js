@@ -1,5 +1,4 @@
-import { Enum, isFunction, isEmpty, NotImplementedException } from 'locustjs-base'
-import { isSubClassOf } from 'locustjs-extensions-object'
+import { Enum, isFunction, isEmpty, isSubClassOf, NotImplementedException } from 'locustjs-base'
 
 const Resolve = Enum.define({
     PerRequest: 0,  // new instance for each request

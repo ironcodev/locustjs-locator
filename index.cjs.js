@@ -7,8 +7,6 @@ exports.Resolve = exports.DefaultLocator = exports.LocatorBase = exports.default
 
 var _locustjsBase = require("locustjs-base");
 
-var _locustjsExtensionsObject = require("locustjs-extensions-object");
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _construct(Parent, args, Class) { if (_isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
@@ -178,7 +176,7 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
         throw "Invalid concretion (class or constructor function expected).";
       }
 
-      if (!(0, _locustjsExtensionsObject.isSubClassOf)(concretion, abstraction)) {
+      if (!(0, _locustjsBase.isSubClassOf)(concretion, abstraction)) {
         throw 'Concretion must be a subclass of abstraction.';
       }
 
@@ -432,7 +430,7 @@ var Locator = /*#__PURE__*/function () {
         throw "no object given to be set as current locator.";
       } else if (value.constructor) {
         throw "locator must have a constructor";
-      } else if (!(0, _locustjsExtensionsObject.isSubClassOf)(value.constructor, LocatorBase)) {
+      } else if (!(0, _locustjsBase.isSubClassOf)(value.constructor, LocatorBase)) {
         throw "locator must be a subclass of LocatorBase";
       }
 
