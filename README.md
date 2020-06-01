@@ -1,7 +1,12 @@
 # locustjs-locator
 This library implements Service Locator pattern in javascript. Service Locator pattern is one of the ways of implementing IoC (inversion of control) and loose coupling.
 
-simple example in react:
+# Installation
+```
+npm install locustjs-locator
+```
+
+## simple example in react
 
 index.js
 ```javascript
