@@ -94,7 +94,7 @@ import ColorServiceBase from './base.js';
 
 class ColorServiceFake extends ColorServiceBase {
   getColors() {
-    return Promise((res, rej) => {
+    return new Promise((res, rej) => {
       res([ 'Red', 'Green', 'Blue', 'Yellow', 'White', 'Black', 'Purple' ]);
     });
   }
