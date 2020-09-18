@@ -7,6 +7,12 @@ exports.Resolve = exports.DefaultLocator = exports.LocatorBase = exports.default
 
 var _locustjsBase = require("locustjs-base");
 
+var _locustjsException = require("locustjs-exception");
+
+var _locustjsEnum = _interopRequireDefault(require("locustjs-enum"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _construct(Parent, args, Class) { if (_isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
@@ -27,7 +33,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
@@ -45,7 +51,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var Resolve = _locustjsBase.Enum.define({
+var Resolve = _locustjsEnum.default.define({
   PerRequest: 0,
   // new instance for each request
   PerApp: 1,
@@ -62,9 +68,7 @@ var LocatorBase = /*#__PURE__*/function () {
   function LocatorBase() {
     _classCallCheck(this, LocatorBase);
 
-    if (this.constructor === LocatorBase) {
-      throw 'LocatorBase is abstract. You cannot instantiate from it.';
-    }
+    (0, _locustjsException.throwIfInstantiateAbstract)(LocatorBase, this);
   }
 
   _createClass(LocatorBase, [{
@@ -84,31 +88,31 @@ var LocatorBase = /*#__PURE__*/function () {
     value: function register(abstraction, concretion) {
       var resolveType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Resolve.PerRequest;
       var state = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-      (0, _locustjsBase.NotImplementedException)('register()');
+      (0, _locustjsException.throwNotImplementedException)('register');
     }
   }, {
     key: "registerFactory",
     value: function registerFactory(abstraction, factory) {
       var resolveType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Resolve.PerRequest;
       var state = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-      (0, _locustjsBase.NotImplementedException)('registerFactory()');
+      (0, _locustjsException.throwNotImplementedException)('registerFactory');
     }
   }, {
     key: "registerInstance",
     value: function registerInstance(abstraction, instance) {
       var resolveType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Resolve.PerRequest;
       var state = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-      (0, _locustjsBase.NotImplementedException)('registerInstance()');
+      (0, _locustjsException.throwNotImplementedException)('registerInstance');
     }
   }, {
     key: "resolveBy",
     value: function resolveBy(abstraction, state) {
-      (0, _locustjsBase.NotImplementedException)('resolveBy()');
+      (0, _locustjsException.throwNotImplementedException)('resolveBy');
     }
   }, {
     key: "resolve",
     value: function resolve(abstraction) {
-      (0, _locustjsBase.NotImplementedException)('resolve()');
+      (0, _locustjsException.throwNotImplementedException)('resolve');
     }
   }]);
 

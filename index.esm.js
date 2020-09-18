@@ -1,4 +1,6 @@
-import { Enum, isFunction, isEmpty, isSubClassOf, NotImplementedException } from 'locustjs-base'
+import { isFunction, isEmpty, isSubClassOf } from 'locustjs-base'
+import { throwIfInstantiateAbstract, throwNotImplementedException } from 'locustjs-exception';
+import Enum from 'locustjs-enum';
 
 const Resolve = Enum.define({
     PerRequest: 0,  // new instance for each request
@@ -9,9 +11,7 @@ const Resolve = Enum.define({
 
 class LocatorBase {
     constructor() {
-        if (this.constructor === LocatorBase) {
-            throw 'LocatorBase is abstract. You cannot instantiate from it.'
-        }
+        throwIfInstantiateAbstract(LocatorBase, this);
     }
     serialize(instance) {
         const result = JSON.stringify(instance);
@@ -24,19 +24,19 @@ class LocatorBase {
         return result;
     }
     register(abstraction, concretion, resolveType = Resolve.PerRequest, state = null) {
-        NotImplementedException('register()')
+        throwNotImplementedException('register');
     }
     registerFactory(abstraction, factory, resolveType = Resolve.PerRequest, state = null) {
-        NotImplementedException('registerFactory()')
+        throwNotImplementedException('registerFactory');
     }
     registerInstance(abstraction, instance, resolveType = Resolve.PerRequest, state = null) {
-        NotImplementedException('registerInstance()')
+        throwNotImplementedException('registerInstance');
     }
     resolveBy(abstraction, state, ...args) {
-        NotImplementedException('resolveBy()')
+        throwNotImplementedException('resolveBy');
     }
     resolve(abstraction, ...args) {
-        NotImplementedException('resolve()')
+        throwNotImplementedException('resolve');
     }
 }
 
