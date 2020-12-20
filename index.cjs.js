@@ -114,6 +114,11 @@ var LocatorBase = /*#__PURE__*/function () {
     value: function resolve(abstraction) {
       (0, _locustjsException.throwNotImplementedException)('resolve');
     }
+  }, {
+    key: "remove",
+    value: function remove(abstraction, state) {
+      (0, _locustjsException.throwNotImplementedException)('remove');
+    }
   }]);
 
   return LocatorBase;
@@ -409,6 +414,17 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       }
 
       return this.resolveBy.apply(this, [abstraction, null].concat(args));
+    }
+  }, {
+    key: "remove",
+    value: function remove(abstraction, state) {
+      var index = this.__entries.findIndex(function (e) {
+        return e.abstraction === abstraction && e.state === state;
+      });
+
+      if (index >= 0) {
+        this.__entries.splice(index, 1);
+      }
     }
   }]);
 

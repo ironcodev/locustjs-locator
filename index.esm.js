@@ -38,6 +38,9 @@ class LocatorBase {
     resolve(abstraction, ...args) {
         throwNotImplementedException('resolve');
     }
+    remove(abstraction, state) {
+        throwNotImplementedException('remove');
+    }
 }
 
 class DefaultStorage {
@@ -254,6 +257,13 @@ class DefaultLocator extends LocatorBase {
     }
     resolve(abstraction, ...args) {
         return this.resolveBy(abstraction, null, ...args)
+    }
+    remove(abstraction, state) {
+        const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state === state);
+
+        if (index >= 0) {
+            this.__entries.splice(index, 1);
+        }
     }
 }
 
