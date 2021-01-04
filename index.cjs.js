@@ -119,6 +119,11 @@ var LocatorBase = /*#__PURE__*/function () {
     value: function remove(abstraction, state) {
       (0, _locustjsException.throwNotImplementedException)('remove');
     }
+  }, {
+    key: "exists",
+    value: function exists(abstraction, state) {
+      (0, _locustjsException.throwNotImplementedException)('exists');
+    }
   }]);
 
   return LocatorBase;
@@ -425,6 +430,15 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       if (index >= 0) {
         this.__entries.splice(index, 1);
       }
+    }
+  }, {
+    key: "exists",
+    value: function exists(abstraction, state) {
+      var index = this.__entries.findIndex(function (e) {
+        return e.abstraction === abstraction && e.state === state;
+      });
+
+      return index >= 0;
     }
   }]);
 

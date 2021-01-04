@@ -5,8 +5,111 @@ This library implements Service Locator pattern in javascript. Service Locator p
 ```
 npm install locustjs-locator
 ```
+# Classes
+| Class	| description |
+|-------|-------------|
+| `LocatorBase` | Base locator abstract class |
+| `DefaultLocator`| Default service locator implementation |
+| `Locator` | Static service locator class with a default singleton `Instance` that is by default an instance of `DefaultLocator` |
 
-## simple example in react
+## ResolveType enum
+```javascript
+{
+  PerRequest: 0,  // instantiate new instance for each request
+  PerApp: 1,      // return a single instance per application (uses localStroage to preserve the instance)
+  PerPage: 2,     // return a single instance per page (insiance is created when page loads)
+  PerSession: 3   // return single instance per browser session (uses sessionStorage to preserve the instance)
+}
+```
+
+# LocatorBase API
+| Method	| description |
+|-------|-------------|
+| `register(abstraction, concretion, resolveType = Resolve.PerRequest, state = null)` | Register `concretion` class for `abstraction` class based on `resolveType` and `state`. `concretion` should be a subclass of `abstraction`. |
+| `registerFactory(abstraction, factory, resolveType = Resolve.PerRequest, state = null)` | Register an object that is instantiated by `factory` method for `abstraction` based on `resolveType` and `state`. The object returned by `factory` should be an instance of `abstraction` class. |
+| `registerInstance(abstraction, instance, resolveType = Resolve.PerRequest, state = null)` | Register `instance` object for `abstraction` based on `resolveType` and `state`. `instance` should be an instance of `abstraction` class. |
+| `resolveBy(abstraction, state, ...args)` | Resolve `abstraction` based on given `state`. Passes `args` when instantiating from the `concretion` that is already registered for `abstraction`. |
+| `resolve(abstraction, ...args)` | Resolve `abstraction`. Passes `args` when instantiating from the `concretion` that is already registered for `abstraction`. |
+| `remove(abstraction, state)` | Remove registration entry for `abstraction` based on the given `state`. |
+| `exists(abstraction, state)` | Check whether a registration entry exists for `abstraction` based on then given `state`. |
+
+## Simple example
+./src/services/foo/index.js
+```javascript
+// Foo Service
+class FooServiceBase {
+  getById(id) {
+    throw 'getById() is not implemented'
+  }
+}
+class FooServiceRemote extends FooServiceBase {
+  async getById(id) {
+    const response = await fetch(`/api/foo/${id}`);
+    const foo = await response.json();
+
+    return foo;
+  }
+}
+class FooServiceFake extends FooServiceBase {
+  constructor() {
+    super();
+
+    this._data = [
+      { id: 1, name: 'Foo1'},
+      { id: 2, name: 'Foo2'},
+      { id: 3, name: 'Foo3'}
+    ]
+  }
+  getById(id) {
+    return new Promise(res => setTimeout(() => res(this._data.find(x => x.id == id)), 1000))
+  }
+}
+
+export { FooServiceBase, FooServiceRemote, FooServiceFake }
+```
+./src/locator.config.js
+```javascript
+import Locator from 'locustjs-locator';
+import { FooServiceBase, FooServiceRemote, FooServiceFake } from './services/foo';
+
+configureLocator(mode) {
+  if (mode.toLowerCase() == 'production') {
+    Locator.register(FooServiceBase, FooServiceRemote);
+  } else {
+    Locator.register(FooServiceBase, FooServiceFake);
+  }
+}
+
+export default configureLocator;
+```
+./src/index.js
+```javascript
+// App startup
+import configureLocator from './locator.config.js';
+
+const exec_type = 'development';  // or 'production'
+
+configureLocator(exec_type)
+```
+./src/app.js
+```javascript
+// FooService Usage
+import Locator from 'locustjs-locator';
+import { FooServiceBase } from './services/foo';
+
+// Here, our code is independent of any foo service implementation.
+// It relies on an abstract foo service. So, we can easily use a fake
+// service to develop our app. Whenever our rest api is developed, we
+// can switch to FooServiceRemote. No change is needed to be applied on app.js.
+
+const service = Locator.Instance.resolve(FooServiceBase);
+
+const foo = await service.getById(1);
+
+console.log(foo)
+```
+
+## React example
 
 index.js
 ```javascript

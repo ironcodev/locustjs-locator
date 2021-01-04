@@ -41,6 +41,9 @@ class LocatorBase {
     remove(abstraction, state) {
         throwNotImplementedException('remove');
     }
+    exists(abstraction, state) {
+        throwNotImplementedException('exists');
+    }
 }
 
 class DefaultStorage {
@@ -264,6 +267,11 @@ class DefaultLocator extends LocatorBase {
         if (index >= 0) {
             this.__entries.splice(index, 1);
         }
+    }
+    exists(abstraction, state) {
+        const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state === state);
+
+        return index >= 0;
     }
 }
 
