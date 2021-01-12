@@ -552,7 +552,7 @@ var Locator = /*#__PURE__*/function () {
     set: function set(value) {
       if ((0, _locustjsBase.isEmpty)(value)) {
         throw "no object given to be set as current locator.";
-      } else if (value.constructor) {
+      } else if (!(0, _locustjsBase.isFunction)(value.constructor)) {
         throw "locator must have a constructor";
       } else if (!(0, _locustjsBase.isSubClassOf)(value.constructor, LocatorBase)) {
         throw "locator must be a subclass of LocatorBase";

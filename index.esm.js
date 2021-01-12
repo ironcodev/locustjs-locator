@@ -343,7 +343,7 @@ class Locator {
     static set Instance(value) {
         if (isEmpty(value)) {
             throw `no object given to be set as current locator.`
-        } else if (value.constructor) {
+        } else if (!isFunction(value.constructor)) {
             throw `locator must have a constructor`
         } else if (!isSubClassOf(value.constructor, LocatorBase)) {
             throw `locator must be a subclass of LocatorBase`
