@@ -116,12 +116,14 @@ var LocatorBase = /*#__PURE__*/function () {
     }
   }, {
     key: "remove",
-    value: function remove(abstraction, state) {
+    value: function remove(abstraction) {
+      var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       (0, _locustjsException.throwNotImplementedException)('remove');
     }
   }, {
     key: "exists",
-    value: function exists(abstraction, state) {
+    value: function exists(abstraction) {
+      var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       (0, _locustjsException.throwNotImplementedException)('exists');
     }
   }]);
@@ -158,12 +160,22 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
 
   var _super = _createSuper(DefaultLocator);
 
-  function DefaultLocator() {
+  function DefaultLocator(config) {
     var _this;
 
     _classCallCheck(this, DefaultLocator);
 
     _this = _super.call(this);
+    _this.config = Object.assign({
+      throwOnRegisterExistingAbstractions: false,
+      logger: {
+        log: function log() {
+          var _console;
+
+          return (_console = console).log.apply(_console, arguments);
+        }
+      }
+    }, config);
     _this.__entries = [];
     _this.__localStorage = typeof window !== 'undefined' && window.localStorage || new DefaultStorage();
     _this.__sessionStorage = typeof window !== 'undefined' && window.sessionStorage || new DefaultStorage();
@@ -171,6 +183,97 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
   }
 
   _createClass(DefaultLocator, [{
+    key: "_danger",
+    value: function _danger() {
+      if ((0, _locustjsBase.isSomeObject)(this.config.logger)) {
+        if ((0, _locustjsBase.isFunction)(this.config.logger.danger)) {
+          var _this$config$logger;
+
+          (_this$config$logger = this.config.logger).danger.apply(_this$config$logger, arguments);
+        } else if ((0, _locustjsBase.isFunction)(this.config.logger.log)) {
+          var _this$config$logger2;
+
+          (_this$config$logger2 = this.config.logger).log.apply(_this$config$logger2, arguments);
+        }
+      }
+    }
+  }, {
+    key: "_debug",
+    value: function _debug() {
+      if ((0, _locustjsBase.isSomeObject)(this.config.logger)) {
+        if ((0, _locustjsBase.isFunction)(this.config.logger.debug)) {
+          var _this$config$logger3;
+
+          (_this$config$logger3 = this.config.logger).debug.apply(_this$config$logger3, arguments);
+        } else if ((0, _locustjsBase.isFunction)(this.config.logger.log)) {
+          var _this$config$logger4;
+
+          (_this$config$logger4 = this.config.logger).log.apply(_this$config$logger4, arguments);
+        }
+      }
+    }
+  }, {
+    key: "_registrationExistence",
+    value: function _registrationExistence(abstraction, concretion, factory, instance) {
+      var resolveType = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Resolve.PerRequest;
+      var state = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : null;
+      var result = false;
+      var errorMessage;
+
+      if (!(0, _locustjsBase.isFunction)(factory) && (0, _locustjsBase.isEmpty)(instance)) {
+        result = this.__entries.find(function (e) {
+          return e.abstraction == abstraction && e.concretion == concretion && e.resolveType == resolveType && e.state == state;
+        });
+
+        if (result) {
+          errorMessage = "registration entry for abstraction '".concat(abstraction.name, "' and state '").concat(state, "' already exists.");
+        }
+      } else if ((0, _locustjsBase.isFunction)(factory)) {
+        result = this.__entries.find(function (e) {
+          return e.abstraction == abstraction && e.factory == factory && e.resolveType == resolveType && e.state == state;
+        });
+
+        if (result) {
+          errorMessage = "registration entry for abstraction '".concat(abstraction.name, "' based on specified factory and state '").concat(state, "' already exists.");
+        }
+      } else if (!(0, _locustjsBase.isEmpty)(instance)) {
+        result = this.__entries.find(function (e) {
+          return e.abstraction == abstraction && e.instance == instance && e.resolveType == resolveType && e.state == state;
+        });
+
+        if (exists) {
+          var _errorMessage = "registration entry for abstraction '".concat(abstraction.name, "' based on specified instance and state '").concat(state, "' already exists.");
+
+          if (this.config.throwOnRegisterExistingAbstractions) {
+            throw _errorMessage;
+          } else {
+            this._danger(_errorMessage);
+          }
+        }
+      }
+
+      if (result) {
+        if (this.config.throwOnRegisterExistingAbstractions) {
+          throw errorMessage;
+        } else {
+          this._danger(errorMessage);
+        }
+      }
+
+      return result;
+    }
+  }, {
+    key: "_log",
+    value: function _log() {
+      if ((0, _locustjsBase.isSomeObject)(this.config.logger)) {
+        if ((0, _locustjsBase.isFunction)(this.config.logger.log)) {
+          var _this$config$logger5;
+
+          (_this$config$logger5 = this.config.logger).log.apply(_this$config$logger5, arguments);
+        }
+      }
+    }
+  }, {
     key: "_validateAbstraction",
     value: function _validateAbstraction(abstraction) {
       if (!(0, _locustjsBase.isFunction)(abstraction)) {
@@ -218,7 +321,8 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       try {
         result = entry.factory(this);
       } catch (e) {
-        console.error(e);
+        this._danger(e);
+
         throw "".concat(entry.abstraction.name, ": factory execution failed.");
       }
 
@@ -281,20 +385,14 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       concretion = this._validateConcretion(concretion, abstraction);
       resolveType = this._validateResolveType(resolveType);
 
-      var exists = this.__entries.find(function (e) {
-        return e.abstraction == abstraction && e.concretion == concretion && e.resolveType == resolveType && e.state == state;
-      });
-
-      if (exists) {
-        throw "registration entry already exists";
+      if (!this._registrationExistence(abstraction, concretion, null, null, resolveType, state)) {
+        this.__entries.push({
+          abstraction: abstraction,
+          concretion: concretion,
+          resolveType: resolveType,
+          state: state
+        });
       }
-
-      this.__entries.push({
-        abstraction: abstraction,
-        concretion: concretion,
-        resolveType: resolveType,
-        state: state
-      });
     }
   }, {
     key: "registerFactory",
@@ -305,20 +403,14 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       factory = this._validateFactory(factory);
       resolveType = this._validateResolveType(resolveType);
 
-      var exists = this.__entries.find(function (e) {
-        return e.abstraction == abstraction && e.factory == factory && e.resolveType == resolveType && e.state == state;
-      });
-
-      if (exists) {
-        throw "registration entry already exists";
+      if (!this._registrationExistence(abstraction, null, factory, null, resolveType, state)) {
+        this.__entries.push({
+          abstraction: abstraction,
+          factory: factory,
+          resolveType: resolveType,
+          state: state
+        });
       }
-
-      this.__entries.push({
-        abstraction: abstraction,
-        factory: factory,
-        resolveType: resolveType,
-        state: state
-      });
     }
   }, {
     key: "registerInstance",
@@ -328,20 +420,14 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       abstraction = this._validateAbstraction(abstraction);
       resolveType = this._validateResolveType(resolveType);
 
-      var exists = this.__entries.find(function (e) {
-        return e.abstraction == abstraction && e.instance == instance && e.resolveType == resolveType && e.state == state;
-      });
-
-      if (exists) {
-        throw "registration entry already exists";
+      if (!this._registrationExistence(abstraction, null, null, instance, resolveType, state)) {
+        this.__entries.push({
+          abstraction: abstraction,
+          instance: instance,
+          resolveType: resolveType,
+          state: state
+        });
       }
-
-      this.__entries.push({
-        abstraction: abstraction,
-        instance: instance,
-        resolveType: resolveType,
-        state: state
-      });
     }
   }, {
     key: "getConfig",
@@ -349,7 +435,7 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
       var result = this.__entries.find(function (e) {
-        return e.abstraction === abstraction && e.state === state;
+        return e.abstraction === abstraction && e.state == state;
       });
 
       return { ...result
@@ -422,9 +508,11 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
     }
   }, {
     key: "remove",
-    value: function remove(abstraction, state) {
+    value: function remove(abstraction) {
+      var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
       var index = this.__entries.findIndex(function (e) {
-        return e.abstraction === abstraction && e.state === state;
+        return e.abstraction === abstraction && e.state == state;
       });
 
       if (index >= 0) {
@@ -433,9 +521,11 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
     }
   }, {
     key: "exists",
-    value: function exists(abstraction, state) {
+    value: function exists(abstraction) {
+      var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
       var index = this.__entries.findIndex(function (e) {
-        return e.abstraction === abstraction && e.state === state;
+        return e.abstraction === abstraction && e.state == state;
       });
 
       return index >= 0;

@@ -1,4 +1,4 @@
-import { isFunction, isEmpty, isSubClassOf } from 'locustjs-base'
+import { isFunction, isEmpty, isSubClassOf, isSomeObject } from 'locustjs-base'
 import { throwIfInstantiateAbstract, throwNotImplementedException } from 'locustjs-exception';
 import Enum from 'locustjs-enum';
 
@@ -38,33 +38,113 @@ class LocatorBase {
     resolve(abstraction, ...args) {
         throwNotImplementedException('resolve');
     }
-    remove(abstraction, state) {
+    remove(abstraction, state = null) {
         throwNotImplementedException('remove');
     }
-    exists(abstraction, state) {
+    exists(abstraction, state = null) {
         throwNotImplementedException('exists');
     }
 }
 
 class DefaultStorage {
-	constructor() {
-		this._data = {};
-	}
-	getItem(key) {
-		return this._data[key];
-	}
-	setItem(key, value) {
-		this._data[key] = value;
-	}
+    constructor() {
+        this._data = {};
+    }
+    getItem(key) {
+        return this._data[key];
+    }
+    setItem(key, value) {
+        this._data[key] = value;
+    }
 }
 
 class DefaultLocator extends LocatorBase {
-    constructor() {
+    constructor(config) {
         super();
 
+        this.config = Object.assign({
+            throwOnRegisterExistingAbstractions: false,
+            logger: {
+                log: (...args) => console.log(...args)
+            }
+        }, config);
         this.__entries = [];
-		this.__localStorage = (typeof window !== 'undefined' && window.localStorage) || new DefaultStorage();
-		this.__sessionStorage = (typeof window !== 'undefined' && window.sessionStorage) || new DefaultStorage();
+        this.__localStorage = (typeof window !== 'undefined' && window.localStorage) || new DefaultStorage();
+        this.__sessionStorage = (typeof window !== 'undefined' && window.sessionStorage) || new DefaultStorage();
+    }
+    _danger(...args) {
+        if (isSomeObject(this.config.logger)) {
+            if (isFunction(this.config.logger.danger)) {
+                this.config.logger.danger(...args)
+            } else if (isFunction(this.config.logger.log)) {
+                this.config.logger.log(...args)
+            }
+        }
+    }
+    _debug(...args) {
+        if (isSomeObject(this.config.logger)) {
+            if (isFunction(this.config.logger.debug)) {
+                this.config.logger.debug(...args)
+            } else if (isFunction(this.config.logger.log)) {
+                this.config.logger.log(...args)
+            }
+        }
+    }
+    _registrationExistence(abstraction, concretion, factory, instance, resolveType = Resolve.PerRequest, state = null) {
+        let result = false;
+        let errorMessage;
+
+        if (!isFunction(factory) && isEmpty(instance)) {
+            result = this.__entries.find(e => e.abstraction == abstraction &&
+                                         e.concretion == concretion &&
+                                         e.resolveType == resolveType &&
+                                         e.state == state);
+
+            if (result) {
+                errorMessage = `registration entry for abstraction '${abstraction.name}' and state '${state}' already exists.`;
+            }
+        } else if (isFunction(factory)) {
+            result = this.__entries.find(e => e.abstraction == abstraction &&
+                                         e.factory == factory &&
+                                         e.resolveType == resolveType &&
+                                         e.state == state);
+    
+            if (result) {
+                errorMessage = `registration entry for abstraction '${abstraction.name}' based on specified factory and state '${state}' already exists.`;
+            }
+        } else if (!isEmpty(instance)) {
+            result = this.__entries.find(e => e.abstraction == abstraction &&
+                                         e.instance == instance &&
+                                         e.resolveType == resolveType &&
+                                         e.state == state);
+    
+            if (exists) {
+                const errorMessage = `registration entry for abstraction '${abstraction.name}' based on specified instance and state '${state}' already exists.`;
+    
+                if (this.config.throwOnRegisterExistingAbstractions) {
+                    throw errorMessage
+                } else {
+                    this._danger(errorMessage);
+                }
+            }
+        }
+
+        if (result) {
+            if (this.config.throwOnRegisterExistingAbstractions) {
+                throw errorMessage
+            } else {
+                this._danger(errorMessage);
+            }
+        }
+
+        return result;
+    }
+    _log(...args) {
+        if (isSomeObject(this.config.logger)) {
+            if (isFunction(this.config.logger.log)) {
+                this.config.logger.log(...args)
+            }
+        }
     }
     _validateAbstraction(abstraction) {
         if (!isFunction(abstraction)) {
@@ -104,7 +184,7 @@ class DefaultLocator extends LocatorBase {
         try {
             result = entry.factory(this);
         } catch (e) {
-            console.error(e);
+            this._danger(e);
 
             throw `${entry.abstraction.name}: factory execution failed.`;
         }
@@ -159,53 +239,32 @@ class DefaultLocator extends LocatorBase {
         concretion = this._validateConcretion(concretion, abstraction);
         resolveType = this._validateResolveType(resolveType);
 
-        const exists = this.__entries.find(e => e.abstraction == abstraction &&
-                                                e.concretion == concretion &&
-                                                e.resolveType == resolveType &&
-                                                e.state == state);
-
-        if (exists) {
-            throw `registration entry already exists`
+        if (!this._registrationExistence(abstraction, concretion, null, null, resolveType, state)) {
+            this.__entries.push({ abstraction, concretion, resolveType, state });
         }
-
-        this.__entries.push({ abstraction, concretion, resolveType, state });
     }
     registerFactory(abstraction, factory, resolveType = Resolve.PerRequest, state = null) {
         abstraction = this._validateAbstraction(abstraction);
         factory = this._validateFactory(factory);
         resolveType = this._validateResolveType(resolveType);
 
-        const exists = this.__entries.find(e => e.abstraction == abstraction &&
-                                                e.factory == factory &&
-                                                e.resolveType == resolveType &&
-                                                e.state == state);
-
-        if (exists) {
-            throw `registration entry already exists`
+        if (!this._registrationExistence(abstraction, null, factory, null, resolveType, state)) {
+            this.__entries.push({ abstraction, factory, resolveType, state });
         }
-
-        this.__entries.push({ abstraction, factory, resolveType, state });
     }
     registerInstance(abstraction, instance, resolveType = Resolve.PerRequest, state = null) {
         abstraction = this._validateAbstraction(abstraction);
         resolveType = this._validateResolveType(resolveType);
 
-        const exists = this.__entries.find(e => e.abstraction == abstraction &&
-                                                e.instance == instance &&
-                                                e.resolveType == resolveType &&
-                                                e.state == state);
-
-        if (exists) {
-            throw `registration entry already exists`
+        if (!this._registrationExistence(abstraction, null, null, instance, resolveType, state)) {
+            this.__entries.push({ abstraction, instance, resolveType, state });
         }
-
-        this.__entries.push({ abstraction, instance, resolveType, state });
     }
-	getConfig(abstraction, state = null) {
-		const result = this.__entries.find(e => e.abstraction === abstraction && e.state === state);
-		
-		return { ...result };
-	}
+    getConfig(abstraction, state = null) {
+        const result = this.__entries.find(e => e.abstraction === abstraction && e.state == state);
+
+        return { ...result };
+    }
     resolveBy(abstraction, state, ...args) {
         let result, storage;
 
@@ -261,15 +320,15 @@ class DefaultLocator extends LocatorBase {
     resolve(abstraction, ...args) {
         return this.resolveBy(abstraction, null, ...args)
     }
-    remove(abstraction, state) {
-        const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state === state);
+    remove(abstraction, state = null) {
+        const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state == state);
 
         if (index >= 0) {
             this.__entries.splice(index, 1);
         }
     }
-    exists(abstraction, state) {
-        const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state === state);
+    exists(abstraction, state = null) {
+        const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state == state);
 
         return index >= 0;
     }
@@ -283,10 +342,10 @@ class Locator {
     }
     static set Instance(value) {
         if (isEmpty(value)) {
-			throw `no object given to be set as current locator.`
-		} else if (value.constructor) {
-			throw `locator must have a constructor`
-		} else if (!isSubClassOf(value.constructor, LocatorBase)) {
+            throw `no object given to be set as current locator.`
+        } else if (value.constructor) {
+            throw `locator must have a constructor`
+        } else if (!isSubClassOf(value.constructor, LocatorBase)) {
             throw `locator must be a subclass of LocatorBase`
         }
 
