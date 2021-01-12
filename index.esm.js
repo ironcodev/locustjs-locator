@@ -118,14 +118,8 @@ class DefaultLocator extends LocatorBase {
                                          e.resolveType == resolveType &&
                                          e.state == state);
     
-            if (exists) {
-                const errorMessage = `registration entry for abstraction '${abstraction.name}' based on specified instance and state '${state}' already exists.`;
-    
-                if (this.config.throwOnRegisterExistingAbstractions) {
-                    throw errorMessage
-                } else {
-                    this._danger(errorMessage);
-                }
+            if (result) {
+                errorMessage = `registration entry for abstraction '${abstraction.name}' based on specified instance and state '${state}' already exists.`;
             }
         }
 

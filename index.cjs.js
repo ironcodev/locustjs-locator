@@ -241,14 +241,8 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
           return e.abstraction == abstraction && e.instance == instance && e.resolveType == resolveType && e.state == state;
         });
 
-        if (exists) {
-          var _errorMessage = "registration entry for abstraction '".concat(abstraction.name, "' based on specified instance and state '").concat(state, "' already exists.");
-
-          if (this.config.throwOnRegisterExistingAbstractions) {
-            throw _errorMessage;
-          } else {
-            this._danger(_errorMessage);
-          }
+        if (result) {
+          errorMessage = "registration entry for abstraction '".concat(abstraction.name, "' based on specified instance and state '").concat(state, "' already exists.");
         }
       }
 
