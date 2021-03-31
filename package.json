@@ -1,10 +1,12 @@
 {
   "name": "locustjs-locator",
-  "version": "1.0.12",
+  "version": "1.1.0",
   "description": "A locustjs library implementing Service Locator pattern to provide loose coupling through IoC (Inversion of Control).",
   "main": "index.cjs.js",
   "module": "index.esm.js",
-  "scripts": {},
+  "scripts": {
+    "test": "jest"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ironcodev/locustjs-locator.git"
@@ -25,7 +27,12 @@
     "url": "https://github.com/ironcodev/locustjs-locator/issues"
   },
   "homepage": "https://github.com/ironcodev/locustjs-locator#readme",
-  "devDependencies": {},
+  "devDependencies": {
+    "@babel/core": "^7.13.14",
+    "@babel/plugin-transform-modules-commonjs": "^7.13.8",
+    "babel-jest": "^26.6.3",
+    "jest": "^26.6.3"
+  },
   "dependencies": {
     "locustjs-base": "^1.0.5",
     "locustjs-enum": "^1.0.1",

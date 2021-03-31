@@ -1,10 +1,10 @@
-import { isFunction, isEmpty, isSubClassOf, isSomeObject } from 'locustjs-base'
+import { isArray, isFunction, isEmpty, isSubClassOf, isSomeObject, isObject } from 'locustjs-base'
 import { throwIfInstantiateAbstract, throwNotImplementedException } from 'locustjs-exception';
 import Enum from 'locustjs-enum';
 
 const Resolve = Enum.define({
     PerRequest: 0,  // new instance for each request
-    PerApp: 1,      // single instance per app (uses localStroage)
+    PerApp: 1,      // single instance per app (uses localStorage)
     PerPage: 2,     // single instance per page load
     PerSession: 3   // single instance per browser session (uses sessionStorage)
 }, 'Resolve');
@@ -44,6 +44,21 @@ class LocatorBase {
     exists(abstraction, state = null) {
         throwNotImplementedException('exists');
     }
+    getLocalStorage() {
+        throwNotImplementedException('getLocalStorage');
+    }
+    setLocalStorage(storage) {
+        throwNotImplementedException('setLocalStorage');
+    }
+    getSessionStorage() {
+        throwNotImplementedException('getSessionStorage');
+    }
+    setSessionStorage(storage) {
+        throwNotImplementedException('setSessionStorage');
+    }
+    get length() {
+        throwNotImplementedException('length');
+    }
 }
 
 class DefaultStorage {
@@ -51,10 +66,19 @@ class DefaultStorage {
         this._data = {};
     }
     getItem(key) {
-        return this._data[key];
+        return (this._data[key] || '').toString();
     }
     setItem(key, value) {
-        this._data[key] = value;
+        this._data[key] = (value || '').toString();
+    }
+    removeItem(key) {
+        delete this._data[key];
+    }
+    get length() {
+        return Object.keys(this._data).length;
+    }
+    clear() {
+        this._data = {}
     }
 }
 
@@ -71,6 +95,22 @@ class DefaultLocator extends LocatorBase {
         this.__entries = [];
         this.__localStorage = (typeof window !== 'undefined' && window.localStorage) || new DefaultStorage();
         this.__sessionStorage = (typeof window !== 'undefined' && window.sessionStorage) || new DefaultStorage();
+        this.id = this.constructor.name;
+    }
+    getLocalStorage() {
+        return this.__localStorage;
+    }
+    setLocalStorage(storage) {
+        this.__localStorage = storage;
+    }
+    getSessionStorage() {
+        return this.__sessionStorage;
+    }
+    setSessionStorage(storage) {
+        this.__sessionStorage = storage;
+    }
+    get length() {
+        return this.__entries.length;
     }
     _danger(...args) {
         if (isSomeObject(this.config.logger)) {
@@ -96,28 +136,28 @@ class DefaultLocator extends LocatorBase {
 
         if (!isFunction(factory) && isEmpty(instance)) {
             result = this.__entries.find(e => e.abstraction == abstraction &&
-                                         e.concretion == concretion &&
-                                         e.resolveType == resolveType &&
-                                         e.state == state);
+                e.concretion == concretion &&
+                e.resolveType == resolveType &&
+                e.state == state);
 
             if (result) {
                 errorMessage = `registration entry for abstraction '${abstraction.name}' and state '${state}' already exists.`;
             }
         } else if (isFunction(factory)) {
             result = this.__entries.find(e => e.abstraction == abstraction &&
-                                         e.factory == factory &&
-                                         e.resolveType == resolveType &&
-                                         e.state == state);
-    
+                e.factory == factory &&
+                e.resolveType == resolveType &&
+                e.state == state);
+
             if (result) {
                 errorMessage = `registration entry for abstraction '${abstraction.name}' based on specified factory and state '${state}' already exists.`;
             }
         } else if (!isEmpty(instance)) {
             result = this.__entries.find(e => e.abstraction == abstraction &&
-                                         e.instance == instance &&
-                                         e.resolveType == resolveType &&
-                                         e.state == state);
-    
+                e.instance == instance &&
+                e.resolveType == resolveType &&
+                e.state == state);
+
             if (result) {
                 errorMessage = `registration entry for abstraction '${abstraction.name}' based on specified instance and state '${state}' already exists.`;
             }
@@ -193,29 +233,92 @@ class DefaultLocator extends LocatorBase {
 
         return result;
     }
-    _getStoredInstance(entry, storage) {
+    _getStorageName(abstraction) {
+        return this.id + '.' + abstraction.name
+    }
+    _getStoredInstance(entry, storage, ...args) {
+        let result;
+
         try {
-            const raw = storage.getItem(entry.abstraction.name);
-            const instance = this.deserialize(raw);
+            const key = this._getStorageName(entry.abstraction);
+            const raw = storage.getItem(key);
 
-            instance.__proto__ = new entry.abstraction().__proto__;
+            if (raw) {
+                result = this.deserialize(raw);
 
-            return instance;
+                if (result) {
+                    const temp = this._createInstance(entry, ...args);
+
+                    Object.setPrototypeOf(result, Object.getPrototypeOf(temp));
+                }
+            }
         } catch (e) {
-            return undefined;
+            this._danger(e);
         }
-    }
-    _setStoredInstance(entry, storage, instance) {
-        const raw = this.serialize(instance);
-
-        storage.setItem(entry.abstraction.name, raw);
-    }
-    _createInstance(entry, args) {
-        const result = new entry.concretion(...args);
 
         return result;
     }
-    _getInstance(entry, args) {
+    _setStoredInstance(entry, storage, instance) {
+        const key = this._getStorageName(entry.abstraction);
+        const raw = this.serialize(instance);
+
+        storage.setItem(key, raw);
+    }
+    _createInstance(entry, ...args) {
+        let result;
+
+        if (isArray(entry.abstraction.dependencies)) {
+            const dependencies = [];
+
+            for (let dependencyAbstract of entry.abstraction.dependencies) {
+                let dependencyConcrete;
+
+                do {
+                    if (isArray(dependencyAbstract)) {
+                        if (dependencyAbstract.length) {
+                            const dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1]: null;
+                            const dependencyArgs = dependencyAbstract.slice(2);
+
+                            dependencyConcrete = this.resolveBy(dependencyAbstract[0], dependencyState, ...dependencyArgs);
+                        }
+
+                        break;
+                    }
+
+                    if (isObject(dependencyAbstract)) {
+                        if (dependencyAbstract.state == null) {
+                            if (isArray(dependencyAbstract.args)) {
+                                dependencyConcrete = this.resolve(dependencyAbstract.dependency, ...dependencyAbstract.args);
+                            } else {
+                                dependencyConcrete = this.resolve(dependencyAbstract.dependency);
+                            }
+                        } else {
+                            if (isArray(dependencyAbstract.args)) {
+                                dependencyConcrete = this.resolveBy(dependencyAbstract.dependency, dependencyAbstract.state, ...dependencyAbstract.args);
+                            } else {
+                                dependencyConcrete = this.resolveBy(dependencyAbstract.dependency, dependencyAbstract.state);
+                            }
+                        }
+
+                        break;
+                    }
+
+                    dependencyConcrete = this.resolve(dependencyAbstract);
+                } while (false);
+
+                dependencies.push(dependencyConcrete);
+            }
+
+            const _args = [...dependencies, ...args];
+
+            result = new entry.concretion(..._args);
+        } else {
+            result = new entry.concretion(...args);
+        }
+
+        return result;
+    }
+    _getInstance(entry, ...args) {
         let result;
 
         if (!isEmpty(entry.instance)) {
@@ -223,7 +326,7 @@ class DefaultLocator extends LocatorBase {
         } else if (isFunction(entry.factory)) {
             result = this._executeFactory(entry);
         } else {
-            result = this._createInstance(entry, args);
+            result = this._createInstance(entry, ...args);
         }
 
         return result;
@@ -273,34 +376,34 @@ class DefaultLocator extends LocatorBase {
 
             switch (entry.resolveType) {
                 case Resolve.PerRequest:
-                    result = this._getInstance(entry, args);
+                    result = this._getInstance(entry, ...args);
 
                     break;
                 case Resolve.PerPage:
-                    result = this._getInstance(entry, args);
+                    result = this._getInstance(entry, ...args);
 
                     this.__entries[abstraction].instance = result;
 
                     break;
                 case Resolve.PerSession:
-                    storage = this.__sessionStorage;
+                    storage = this.getSessionStorage();
 
-                    result = this._getStoredInstance(entry, storage);
+                    result = this._getStoredInstance(entry, storage, ...args);
 
                     if (isEmpty(result)) {
-                        result = this._getInstance(entry, args);
+                        result = this._getInstance(entry, ...args);
 
                         this._setStoredInstance(entry, storage, result);
                     }
 
                     break;
                 case Resolve.PerApp:
-                    storage = this.__localStorage;
+                    storage = this.getLocalStorage();
 
-                    result = this._getStoredInstance(entry, storage);
+                    result = this._getStoredInstance(entry, storage, ...args);
 
                     if (isEmpty(result)) {
-                        result = this._getInstance(entry, args);
+                        result = this._getInstance(entry, ...args);
 
                         this._setStoredInstance(entry, storage, result);
                     }
@@ -319,7 +422,11 @@ class DefaultLocator extends LocatorBase {
 
         if (index >= 0) {
             this.__entries.splice(index, 1);
+
+            return true;
         }
+
+        return false;
     }
     exists(abstraction, state = null) {
         const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state == state);
@@ -348,4 +455,4 @@ class Locator {
 }
 
 export default Locator;
-export { LocatorBase, DefaultLocator, Resolve }
+export { LocatorBase, DefaultLocator, DefaultStorage, Resolve }
