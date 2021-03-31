@@ -79,8 +79,7 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
 
 // this IIF is able to test a locator thoroughly.
 // if a new locator is developed, in order to test it
-// we just need to add a factory config argument (at the
-// end of the page).
+// we just need to add a factory config argument.
 
 (function (...locatorFactoryConfigs) {
     for (let locatorFactoryConfig of locatorFactoryConfigs) {
