@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Resolve = exports.DefaultLocator = exports.LocatorBase = exports[
+exports.Resolve = exports.DefaultStorage = exports.DefaultLocator = exports.LocatorBase = exports[
   "default"
 ] = void 0;
 
@@ -295,7 +295,7 @@ var Resolve = _locustjsEnum["default"].define(
     PerRequest: 0,
     // new instance for each request
     PerApp: 1,
-    // single instance per app (uses localStroage)
+    // single instance per app (uses localStorage)
     PerPage: 2,
     // single instance per page load
     PerSession: 3 // single instance per browser session (uses sessionStorage)
@@ -402,6 +402,40 @@ var LocatorBase = /*#__PURE__*/ (function () {
             : null;
         (0, _locustjsException.throwNotImplementedException)("exists");
       }
+    },
+    {
+      key: "getLocalStorage",
+      value: function getLocalStorage() {
+        (0, _locustjsException.throwNotImplementedException)("getLocalStorage");
+      }
+    },
+    {
+      key: "setLocalStorage",
+      value: function setLocalStorage(storage) {
+        (0, _locustjsException.throwNotImplementedException)("setLocalStorage");
+      }
+    },
+    {
+      key: "getSessionStorage",
+      value: function getSessionStorage() {
+        (0, _locustjsException.throwNotImplementedException)(
+          "getSessionStorage"
+        );
+      }
+    },
+    {
+      key: "setSessionStorage",
+      value: function setSessionStorage(storage) {
+        (0, _locustjsException.throwNotImplementedException)(
+          "setSessionStorage"
+        );
+      }
+    },
+    {
+      key: "length",
+      get: function get() {
+        (0, _locustjsException.throwNotImplementedException)("length");
+      }
     }
   ]);
 
@@ -421,19 +455,39 @@ var DefaultStorage = /*#__PURE__*/ (function () {
     {
       key: "getItem",
       value: function getItem(key) {
-        return this._data[key];
+        return (this._data[key] || "").toString();
       }
     },
     {
       key: "setItem",
       value: function setItem(key, value) {
-        this._data[key] = value;
+        this._data[key] = (value || "").toString();
+      }
+    },
+    {
+      key: "removeItem",
+      value: function removeItem(key) {
+        delete this._data[key];
+      }
+    },
+    {
+      key: "clear",
+      value: function clear() {
+        this._data = {};
+      }
+    },
+    {
+      key: "length",
+      get: function get() {
+        return Object.keys(this._data).length;
       }
     }
   ]);
 
   return DefaultStorage;
 })();
+
+exports.DefaultStorage = DefaultStorage;
 
 var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
   _inherits(DefaultLocator, _LocatorBase);
@@ -466,10 +520,35 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
     _this.__sessionStorage =
       (typeof window !== "undefined" && window.sessionStorage) ||
       new DefaultStorage();
+    _this.id = _this.constructor.name;
     return _this;
   }
 
   _createClass(DefaultLocator, [
+    {
+      key: "getLocalStorage",
+      value: function getLocalStorage() {
+        return this.__localStorage;
+      }
+    },
+    {
+      key: "setLocalStorage",
+      value: function setLocalStorage(storage) {
+        this.__localStorage = storage;
+      }
+    },
+    {
+      key: "getSessionStorage",
+      value: function getSessionStorage() {
+        return this.__sessionStorage;
+      }
+    },
+    {
+      key: "setSessionStorage",
+      value: function setSessionStorage(storage) {
+        this.__sessionStorage = storage;
+      }
+    },
     {
       key: "_danger",
       value: function _danger() {
@@ -693,44 +772,77 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
       }
     },
     {
+      key: "_getStorageName",
+      value: function _getStorageName(abstraction) {
+        return this.id + "." + abstraction.name;
+      }
+    },
+    {
       key: "_getStoredInstance",
       value: function _getStoredInstance(entry, storage) {
+        var result;
+
         try {
-          var raw = storage.getItem(entry.abstraction.name);
-          var instance = this.deserialize(raw);
-          instance.__proto__ = new entry.abstraction().__proto__;
-          return instance;
+          var key = this._getStorageName(entry.abstraction);
+
+          var raw = storage.getItem(key);
+
+          if (raw) {
+            result = this.deserialize(raw);
+
+            if (result) {
+              for (
+                var _len = arguments.length,
+                  args = new Array(_len > 2 ? _len - 2 : 0),
+                  _key = 2;
+                _key < _len;
+                _key++
+              ) {
+                args[_key - 2] = arguments[_key];
+              }
+
+              var temp = this._createInstance.apply(this, [entry].concat(args));
+
+              Object.setPrototypeOf(result, Object.getPrototypeOf(temp));
+            }
+          }
         } catch (e) {
-          return undefined;
+          this._danger(e);
         }
+
+        return result;
       }
     },
     {
       key: "_setStoredInstance",
       value: function _setStoredInstance(entry, storage, instance) {
+        var key = this._getStorageName(entry.abstraction);
+
         var raw = this.serialize(instance);
-        storage.setItem(entry.abstraction.name, raw);
+        storage.setItem(key, raw);
       }
     },
     {
       key: "_createInstance",
-      value: function _createInstance(abstraction, entry) {
+      value: function _createInstance(entry) {
         var result;
 
         for (
-          var _len = arguments.length,
-            args = new Array(_len > 2 ? _len - 2 : 0),
-            _key = 2;
-          _key < _len;
-          _key++
+          var _len2 = arguments.length,
+            args = new Array(_len2 > 1 ? _len2 - 1 : 0),
+            _key2 = 1;
+          _key2 < _len2;
+          _key2++
         ) {
-          args[_key - 2] = arguments[_key];
+          args[_key2 - 1] = arguments[_key2];
         }
 
-        if ((0, _locustjsBase.isArray)(abstraction.dependencies)) {
+        if ((0, _locustjsBase.isArray)(entry.abstraction.dependencies)) {
           var dependencies = [];
 
-          var _iterator = _createForOfIteratorHelper(abstraction.dependencies),
+          var _iterator = _createForOfIteratorHelper(
+              entry.abstraction.dependencies
+            ),
             _step;
 
           try {
@@ -738,17 +850,61 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
               var dependencyAbstract = _step.value;
               var dependencyConcrete = void 0;
 
-              if ((0, _locustjsBase.isArray)(dependencyAbstract)) {
-                if (dependencyAbstract.length) {
-                  var dependencyArgs = dependencyAbstract.slice(1);
-                  dependencyConcrete = this.resolve(
-                    dependencyAbstract[0],
-                    dependencyArgs
-                  );
+              do {
+                if ((0, _locustjsBase.isArray)(dependencyAbstract)) {
+                  if (dependencyAbstract.length) {
+                    var dependencyState =
+                      dependencyAbstract.length > 1
+                        ? dependencyAbstract[1]
+                        : null;
+                    var dependencyArgs = dependencyAbstract.slice(2);
+                    dependencyConcrete = this.resolveBy.apply(
+                      this,
+                      [dependencyAbstract[0], dependencyState].concat(
+                        _toConsumableArray(dependencyArgs)
+                      )
+                    );
+                  }
+
+                  break;
                 }
-              } else {
+
+                if ((0, _locustjsBase.isObject)(dependencyAbstract)) {
+                  if (dependencyAbstract.state == null) {
+                    if ((0, _locustjsBase.isArray)(dependencyAbstract.args)) {
+                      dependencyConcrete = this.resolve.apply(
+                        this,
+                        [dependencyAbstract.dependency].concat(
+                          _toConsumableArray(dependencyAbstract.args)
+                        )
+                      );
+                    } else {
+                      dependencyConcrete = this.resolve(
+                        dependencyAbstract.dependency
+                      );
+                    }
+                  } else {
+                    if ((0, _locustjsBase.isArray)(dependencyAbstract.args)) {
+                      dependencyConcrete = this.resolveBy.apply(
+                        this,
+                        [
+                          dependencyAbstract.dependency,
+                          dependencyAbstract.state
+                        ].concat(_toConsumableArray(dependencyAbstract.args))
+                      );
+                    } else {
+                      dependencyConcrete = this.resolveBy(
+                        dependencyAbstract.dependency,
+                        dependencyAbstract.state
+                      );
+                    }
+                  }
+
+                  break;
+                }
+
                 dependencyConcrete = this.resolve(dependencyAbstract);
-              }
+              } while (false);
 
               dependencies.push(dependencyConcrete);
             }
@@ -770,7 +926,7 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
     },
     {
       key: "_getInstance",
-      value: function _getInstance(abstraction, entry) {
+      value: function _getInstance(entry) {
         var result;
 
         if (!(0, _locustjsBase.isEmpty)(entry.instance)) {
@@ -779,19 +935,16 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
           result = this._executeFactory(entry);
         } else {
           for (
-            var _len2 = arguments.length,
-              args = new Array(_len2 > 2 ? _len2 - 2 : 0),
-              _key2 = 2;
-            _key2 < _len2;
-            _key2++
+            var _len3 = arguments.length,
+              args = new Array(_len3 > 1 ? _len3 - 1 : 0),
+              _key3 = 1;
+            _key3 < _len3;
+            _key3++
           ) {
-            args[_key2 - 2] = arguments[_key2];
+            args[_key3 - 1] = arguments[_key3];
           }
 
-          result = this._createInstance.apply(
-            this,
-            [abstraction, entry].concat(args)
-          );
+          result = this._createInstance.apply(this, [entry].concat(args));
         }
 
         return result;
@@ -917,13 +1070,13 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
       key: "resolveBy",
       value: function resolveBy(abstraction, state) {
         for (
-          var _len3 = arguments.length,
-            args = new Array(_len3 > 2 ? _len3 - 2 : 0),
-            _key3 = 2;
-          _key3 < _len3;
-          _key3++
+          var _len4 = arguments.length,
+            args = new Array(_len4 > 2 ? _len4 - 2 : 0),
+            _key4 = 2;
+          _key4 < _len4;
+          _key4++
         ) {
-          args[_key3 - 2] = arguments[_key3];
+          args[_key4 - 2] = arguments[_key4];
         }
 
         var result, storage;
@@ -941,29 +1094,23 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
 
           switch (entry.resolveType) {
             case Resolve.PerRequest:
-              result = this._getInstance.apply(
-                this,
-                [abstraction, entry].concat(args)
-              );
+              result = this._getInstance.apply(this, [entry].concat(args));
               break;
 
             case Resolve.PerPage:
-              result = this._getInstance.apply(
-                this,
-                [abstraction, entry].concat(args)
-              );
+              result = this._getInstance.apply(this, [entry].concat(args));
               this.__entries[abstraction].instance = result;
               break;
 
             case Resolve.PerSession:
-              storage = this.__sessionStorage;
-              result = this._getStoredInstance(entry, storage);
+              storage = this.getSessionStorage();
+              result = this._getStoredInstance.apply(
+                this,
+                [entry, storage].concat(args)
+              );
 
               if ((0, _locustjsBase.isEmpty)(result)) {
-                result = this._getInstance.apply(
-                  this,
-                  [abstraction, entry].concat(args)
-                );
+                result = this._getInstance.apply(this, [entry].concat(args));
 
                 this._setStoredInstance(entry, storage, result);
               }
@@ -971,14 +1118,14 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
               break;
 
             case Resolve.PerApp:
-              storage = this.__localStorage;
-              result = this._getStoredInstance(entry, storage);
+              storage = this.getLocalStorage();
+              result = this._getStoredInstance.apply(
+                this,
+                [entry, storage].concat(args)
+              );
 
               if ((0, _locustjsBase.isEmpty)(result)) {
-                result = this._getInstance.apply(
-                  this,
-                  [abstraction, entry].concat(args)
-                );
+                result = this._getInstance.apply(this, [entry].concat(args));
 
                 this._setStoredInstance(entry, storage, result);
               }
@@ -994,13 +1141,13 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
       key: "resolve",
       value: function resolve(abstraction) {
         for (
-          var _len4 = arguments.length,
-            args = new Array(_len4 > 1 ? _len4 - 1 : 0),
-            _key4 = 1;
-          _key4 < _len4;
-          _key4++
+          var _len5 = arguments.length,
+            args = new Array(_len5 > 1 ? _len5 - 1 : 0),
+            _key5 = 1;
+          _key5 < _len5;
+          _key5++
         ) {
-          args[_key4 - 1] = arguments[_key4];
+          args[_key5 - 1] = arguments[_key5];
         }
 
         return this.resolveBy.apply(this, [abstraction, null].concat(args));
@@ -1040,6 +1187,12 @@ var DefaultLocator = /*#__PURE__*/ (function (_LocatorBase) {
         });
 
         return index >= 0;
+      }
+    },
+    {
+      key: "length",
+      get: function get() {
+        return this.__entries.length;
       }
     }
   ]);
