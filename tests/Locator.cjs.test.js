@@ -1,5 +1,4 @@
-// const { DefaultLocator, Resolve } = require('../index.cjs');
-import { DefaultLocator, DefaultStorage, Resolve } from '../index.esm.js';
+const { DefaultLocator, DefaultStorage, Resolve } = require('../index.cjs.js');
 
 class FooServiceAbstract {
     constructor(code, size) {
