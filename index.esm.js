@@ -202,6 +202,21 @@ class DefaultLocator extends LocatorBase {
 
         return concretion;
     }
+    _validateInstance(abstraction, instance) {
+        let result = instance;
+
+        if (isEmpty(instance)) {
+            throw `no instance specified.`
+        }
+
+        result = isFunction(instance) ? instance(this): instance;
+
+        if (!(result instanceof abstraction)) {
+            throw 'instance must be a subclass of abstraction.'
+        }
+
+        return result;
+    }
     _validateFactory(factory) {
         if (!isFunction(factory)) {
             throw 'Invalid factory. Factory must be a function'
@@ -351,6 +366,7 @@ class DefaultLocator extends LocatorBase {
     }
     registerInstance(abstraction, instance, resolveType = Resolve.PerRequest, state = null) {
         abstraction = this._validateAbstraction(abstraction);
+        instance = this._validateInstance(abstraction, instance);
         resolveType = this._validateResolveType(resolveType);
 
         if (!this._registrationExistence(abstraction, null, null, instance, resolveType, state)) {

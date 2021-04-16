@@ -192,8 +192,8 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
                 expect(x.size).toBe(10);
             });
 
-            // --------------------- registerInstance -------------------
-
+            // --------------------- register/resolve -------------------
+            
             test('register(A, B): resolve() should return different objects', () => {
                 const locator = locatorFactoryConfig.factory();
 
@@ -205,10 +205,23 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
                 expect(f1 == f2).toBe(false);
             });
 
-            test('registerInstance(A, B): resolve() should return same objects', () => {
+            // --------------------- registerInstance -------------------
+
+            test('registerInstance(A, B): resolve() should return same objects <INSTANCE>', () => {
                 const locator = locatorFactoryConfig.factory();
 
-                locator.registerInstance(FooServiceAbstract, FooServiceConcrete);
+                locator.registerInstance(FooServiceAbstract, new FooServiceConcrete());
+
+                const f1 = locator.resolve(FooServiceAbstract);
+                const f2 = locator.resolve(FooServiceAbstract);
+
+                expect(f1 == f2).toBe(true);
+            });
+
+            test('registerInstance(A, B): resolve() should return same objects <FUNCTION>', () => {
+                const locator = locatorFactoryConfig.factory();
+
+                locator.registerInstance(FooServiceAbstract, () => new FooServiceConcrete());
 
                 const f1 = locator.resolve(FooServiceAbstract);
                 const f2 = locator.resolve(FooServiceAbstract);

@@ -368,6 +368,23 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       return concretion;
     }
   }, {
+    key: "_validateInstance",
+    value: function _validateInstance(abstraction, instance) {
+      var result = instance;
+
+      if ((0, _locustjsBase.isEmpty)(instance)) {
+        throw "no instance specified.";
+      }
+
+      result = (0, _locustjsBase.isFunction)(instance) ? instance(this) : instance;
+
+      if (!(result instanceof abstraction)) {
+        throw 'instance must be a subclass of abstraction.';
+      }
+
+      return result;
+    }
+  }, {
     key: "_validateFactory",
     value: function _validateFactory(factory) {
       if (!(0, _locustjsBase.isFunction)(factory)) {
@@ -576,6 +593,7 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       var resolveType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Resolve.PerRequest;
       var state = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
       abstraction = this._validateAbstraction(abstraction);
+      instance = this._validateInstance(abstraction, instance);
       resolveType = this._validateResolveType(resolveType);
 
       if (!this._registrationExistence(abstraction, null, null, instance, resolveType, state)) {
