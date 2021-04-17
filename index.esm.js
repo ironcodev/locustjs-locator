@@ -209,7 +209,7 @@ class DefaultLocator extends LocatorBase {
             throw `no instance specified.`
         }
 
-        result = isFunction(instance) ? instance(this): instance;
+        result = isFunction(instance) ? instance(this) : instance;
 
         if (!(result instanceof abstraction)) {
             throw 'instance must be a subclass of abstraction.'
@@ -281,6 +281,7 @@ class DefaultLocator extends LocatorBase {
     }
     _createInstance(entry, ...args) {
         let result;
+        const hasDependencyArgs = args.length == 1 && isObject(args[0]) && args[0].args != null;
 
         if (isArray(entry.abstraction.dependencies)) {
             const dependencies = [];
@@ -291,27 +292,55 @@ class DefaultLocator extends LocatorBase {
                 do {
                     if (isArray(dependencyAbstract)) {
                         if (dependencyAbstract.length) {
-                            const dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1]: null;
-                            const dependencyArgs = dependencyAbstract.slice(2);
+                            const dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1] : null;
+                            const _dependencyAbstract = dependencyAbstract[0];
+                            let dependencyArgs = [];
 
-                            dependencyConcrete = this.resolveBy(dependencyAbstract[0], dependencyState, ...dependencyArgs);
+                            if (hasDependencyArgs) {
+                                dependencyArgs = args[0][_dependencyAbstract];
+
+                                if (isEmpty(dependencyArgs)) {
+                                    dependencyArgs = [];
+                                } else {
+                                    if (!isArray(dependencyArgs)) {
+                                        dependencyArgs = [dependencyArgs]
+                                    }
+                                }
+                            }
+
+                            dependencyArgs = [...dependencyAbstract.slice(2), ...dependencyArgs]
+
+                            dependencyConcrete = this.resolveBy(_dependencyAbstract, dependencyState, ...dependencyArgs);
                         }
 
                         break;
                     }
 
                     if (isObject(dependencyAbstract)) {
-                        if (dependencyAbstract.state == null) {
+                        let dependencyArgs = [];
+                        const _dependencyAbstract = dependencyAbstract.dependency;
+
+                        if (isFunction(_dependencyAbstract)) {
+                            if (hasDependencyArgs) {
+                                dependencyArgs = args[0][_dependencyAbstract];
+
+                                if (isEmpty(dependencyArgs)) {
+                                    dependencyArgs = [];
+                                } else {
+                                    if (!isArray(dependencyArgs)) {
+                                        dependencyArgs = [dependencyArgs]
+                                    }
+                                }
+                            }
+
                             if (isArray(dependencyAbstract.args)) {
+                                dependencyArgs = [...dependencyAbstract.args, ...dependencyArgs]
+                            }
+
+                            if (dependencyAbstract.state == null) {
                                 dependencyConcrete = this.resolve(dependencyAbstract.dependency, ...dependencyAbstract.args);
                             } else {
-                                dependencyConcrete = this.resolve(dependencyAbstract.dependency);
-                            }
-                        } else {
-                            if (isArray(dependencyAbstract.args)) {
                                 dependencyConcrete = this.resolveBy(dependencyAbstract.dependency, dependencyAbstract.state, ...dependencyAbstract.args);
-                            } else {
-                                dependencyConcrete = this.resolveBy(dependencyAbstract.dependency, dependencyAbstract.state);
                             }
                         }
 
