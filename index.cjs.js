@@ -464,6 +464,21 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       storage.setItem(key, raw);
     }
   }, {
+    key: "_getDependencyArgs",
+    value: function _getDependencyArgs(abstraction, args) {
+      var result = args[0][abstraction];
+
+      if ((0, _locustjsBase.isEmpty)(result)) {
+        result = [];
+      } else {
+        if (!(0, _locustjsBase.isArray)(result)) {
+          result = [result];
+        }
+      }
+
+      return result;
+    }
+  }, {
     key: "_createInstance",
     value: function _createInstance(entry) {
       var result;
@@ -471,6 +486,8 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
         args[_key2 - 1] = arguments[_key2];
       }
+
+      var hasDependencyArgs = args.length == 1 && (0, _locustjsBase.isObject)(args[0]) && (0, _locustjsBase.isArray)(args[0].args);
 
       if ((0, _locustjsBase.isArray)(entry.abstraction.dependencies)) {
         var dependencies = [];
@@ -482,37 +499,54 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
             var dependencyAbstract = _step.value;
             var dependencyConcrete = void 0;
+            var dependencyArgs = [];
 
             do {
               if ((0, _locustjsBase.isArray)(dependencyAbstract)) {
                 if (dependencyAbstract.length) {
                   var dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1] : null;
-                  var dependencyArgs = dependencyAbstract.slice(2);
-                  dependencyConcrete = this.resolveBy.apply(this, [dependencyAbstract[0], dependencyState].concat(_toConsumableArray(dependencyArgs)));
+                  var _dependencyAbstract = dependencyAbstract[0];
+
+                  if (hasDependencyArgs) {
+                    dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
+                  }
+
+                  dependencyArgs = [].concat(_toConsumableArray(dependencyAbstract.slice(2)), _toConsumableArray(dependencyArgs));
+                  dependencyConcrete = this.resolveBy.apply(this, [_dependencyAbstract, dependencyState].concat(_toConsumableArray(dependencyArgs)));
                 }
 
                 break;
               }
 
               if ((0, _locustjsBase.isObject)(dependencyAbstract)) {
-                if (dependencyAbstract.state == null) {
-                  if ((0, _locustjsBase.isArray)(dependencyAbstract.args)) {
-                    dependencyConcrete = this.resolve.apply(this, [dependencyAbstract.dependency].concat(_toConsumableArray(dependencyAbstract.args)));
-                  } else {
-                    dependencyConcrete = this.resolve(dependencyAbstract.dependency);
+                var _dependencyAbstract2 = dependencyAbstract.dependency;
+
+                if ((0, _locustjsBase.isFunction)(_dependencyAbstract2)) {
+                  if (hasDependencyArgs) {
+                    dependencyArgs = this._getDependencyArgs(_dependencyAbstract2, args);
                   }
-                } else {
+
                   if ((0, _locustjsBase.isArray)(dependencyAbstract.args)) {
-                    dependencyConcrete = this.resolveBy.apply(this, [dependencyAbstract.dependency, dependencyAbstract.state].concat(_toConsumableArray(dependencyAbstract.args)));
+                    dependencyArgs = [].concat(_toConsumableArray(dependencyAbstract.args), _toConsumableArray(dependencyArgs));
                   } else {
-                    dependencyConcrete = this.resolveBy(dependencyAbstract.dependency, dependencyAbstract.state);
+                    dependencyArgs = [dependencyAbstract.args].concat(_toConsumableArray(dependencyArgs));
+                  }
+
+                  if (dependencyAbstract.state == null) {
+                    dependencyConcrete = this.resolve.apply(this, [_dependencyAbstract2].concat(_toConsumableArray(dependencyArgs)));
+                  } else {
+                    dependencyConcrete = this.resolveBy.apply(this, [_dependencyAbstract2, dependencyAbstract.state].concat(_toConsumableArray(dependencyArgs)));
                   }
                 }
 
                 break;
               }
 
-              dependencyConcrete = this.resolve(dependencyAbstract);
+              if (hasDependencyArgs) {
+                dependencyArgs = this._getDependencyArgs(dependencyAbstract, args);
+              }
+
+              dependencyConcrete = this.resolve.apply(this, [dependencyAbstract].concat(_toConsumableArray(dependencyArgs)));
             } while (false);
 
             dependencies.push(dependencyConcrete);
@@ -523,7 +557,13 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
           _iterator.f();
         }
 
-        var _args = [].concat(dependencies, args);
+        var _args;
+
+        if (hasDependencyArgs) {
+          _args = [].concat(dependencies, _toConsumableArray(args[0].args));
+        } else {
+          _args = [].concat(dependencies, args);
+        }
 
         result = _construct(entry.concretion, _toConsumableArray(_args));
       } else {

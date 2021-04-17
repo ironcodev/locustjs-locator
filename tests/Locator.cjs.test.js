@@ -1,9 +1,10 @@
 const { DefaultLocator, DefaultStorage, Resolve } = require('../index.cjs.js');
 
 class FooServiceAbstract {
-    constructor(code, size) {
+    constructor(code, size, num) {
         this.code = code;
         this.size = size;
+        this.num = num;
     }
 }
 class FooServiceConcreteIndependent { }
@@ -12,7 +13,7 @@ class FooServiceConcrete extends FooServiceAbstract {
         super(...args);
     }
 }
-
+// ---------------------------------------------------
 class BarServiceAbstract {
     constructor(name) {
         this.name = name;
@@ -23,7 +24,7 @@ class BarServiceConcrete extends BarServiceAbstract {
         super(name);
     }
 }
-
+// ---------------------------------------------------
 class BazServiceAbstract1 {
     constructor(fooService, barService) {
         this.fooService = fooService;
@@ -35,7 +36,7 @@ BazServiceAbstract1.dependencies = [
     BarServiceAbstract
 ];
 class BazServiceConcrete1 extends BazServiceAbstract1 { }
-
+// ---------------------------------------------------
 class BazServiceAbstract2 {
     constructor(fooService, barService) {
         this.fooService = fooService;
@@ -47,7 +48,7 @@ BazServiceAbstract2.dependencies = [
     [BarServiceAbstract, 1]
 ];
 class BazServiceConcrete2 extends BazServiceAbstract2 { }
-
+// ---------------------------------------------------
 class BazServiceAbstract3 {
     constructor(fooService, barService) {
         this.fooService = fooService;
@@ -59,7 +60,7 @@ BazServiceAbstract3.dependencies = [
     [BarServiceAbstract, null, 'B1']
 ];
 class BazServiceConcrete3 extends BazServiceAbstract3 { }
-
+// ---------------------------------------------------
 class BazServiceAbstract4 {
     constructor(fooService, barService) {
         this.fooService = fooService;
@@ -75,6 +76,25 @@ BazServiceAbstract4.dependencies = [
     }
 ];
 class BazServiceConcrete4 extends BazServiceAbstract4 { }
+// ---------------------------------------------------
+class BazServiceAbstract5 {
+    constructor(fooService, barService, title, desc) {
+        this.fooService = fooService;
+        this.barService = barService;
+        this.title = title;
+        this.desc = desc;
+    }
+}
+BazServiceAbstract5.dependencies = [
+    {
+        dependency: FooServiceAbstract,
+        state: 2,
+        args: [10]
+    },
+    BarServiceAbstract
+];
+class BazServiceConcrete5 extends BazServiceAbstract5 { }
+// ---------------------------------------------------
 
 // this IIF is able to test a locator thoroughly.
 // if a new locator is developed, in order to test it
@@ -193,7 +213,7 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
             });
 
             // --------------------- register/resolve -------------------
-            
+
             test('register(A, B): resolve() should return different objects', () => {
                 const locator = locatorFactoryConfig.factory();
 
@@ -370,7 +390,7 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
 
             // --------------------- resolve(A, B): dependencies should be resolved automatically -------------------
 
-            test('register(A, B): dependencies should be resolved automatically', () => {
+            test('register(A, B): dependencies should be resolved automatically <ex.1>', () => {
                 const locator = locatorFactoryConfig.factory();
 
                 locator.register(FooServiceAbstract, FooServiceConcrete);
@@ -384,7 +404,7 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
                 expect(x.barService).toBeDefined();
             });
 
-            test('register(A, B): dependencies should be resolved automatically', () => {
+            test('register(A, B): dependencies should be resolved automatically <ex.2>', () => {
                 const locator = locatorFactoryConfig.factory();
 
                 locator.register(FooServiceAbstract, FooServiceConcrete);
@@ -398,7 +418,7 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
                 expect(x.barService).toBeDefined();
             });
 
-            test('register(A, B): dependencies should be resolved automatically', () => {
+            test('register(A, B): dependencies should be resolved automatically <ex.3>', () => {
                 const locator = locatorFactoryConfig.factory();
 
                 locator.register(FooServiceAbstract, FooServiceConcrete);
@@ -415,7 +435,7 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
                 expect(x.barService.name).toBe('B1');
             });
 
-            test('register(A, B): dependencies should be resolved automatically', () => {
+            test('register(A, B): dependencies should be resolved automatically <ex.4>', () => {
                 const locator = locatorFactoryConfig.factory();
 
                 locator.register(FooServiceAbstract, FooServiceConcrete, Resolve.PerRequest, 1);
@@ -431,6 +451,29 @@ class BazServiceConcrete4 extends BazServiceAbstract4 { }
                 expect(x.barService).toBeDefined();
                 expect(x.barService.name).toBe('B1');
             });
+        });
+
+        test('register(A, B): dependencies should be resolved automatically <ex.5>', () => {
+            const locator = locatorFactoryConfig.factory();
+
+            locator.register(FooServiceAbstract, FooServiceConcrete, Resolve.PerRequest, 2);
+            locator.register(BarServiceAbstract, BarServiceConcrete, Resolve.PerRequest);
+            locator.register(BazServiceAbstract5, BazServiceConcrete5);
+
+            const x = locator.resolve(BazServiceAbstract5, {
+                args: ['baz-title'],
+                [FooServiceAbstract]: [20, 30],
+                [BarServiceAbstract]: ['bar-name']
+            });
+
+            expect(x).toBeDefined();
+            expect(x.title).toBe('baz-title');
+            expect(x.fooService).toBeDefined();
+            expect(x.fooService.code).toBe(10);
+            expect(x.fooService.size).toBe(20);
+            expect(x.fooService.num).toBe(30);
+            expect(x.barService).toBeDefined();
+            expect(x.barService.name).toBe('bar-name');
         });
     }
 })({    // factory config item to test DefaultLocator class

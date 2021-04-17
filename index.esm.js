@@ -279,37 +279,41 @@ class DefaultLocator extends LocatorBase {
 
         storage.setItem(key, raw);
     }
+    _getDependencyArgs(abstraction, args) {
+        let result = args[0][abstraction];
+
+        if (isEmpty(result)) {
+            result = [];
+        } else {
+            if (!isArray(result)) {
+                result = [result]
+            }
+        }
+
+        return result;
+    }
     _createInstance(entry, ...args) {
         let result;
-        const hasDependencyArgs = args.length == 1 && isObject(args[0]) && args[0].args != null;
+        const hasDependencyArgs = args.length == 1 && isObject(args[0]) && isArray(args[0].args);
 
         if (isArray(entry.abstraction.dependencies)) {
             const dependencies = [];
 
             for (let dependencyAbstract of entry.abstraction.dependencies) {
                 let dependencyConcrete;
+                let dependencyArgs = [];
 
                 do {
                     if (isArray(dependencyAbstract)) {
                         if (dependencyAbstract.length) {
                             const dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1] : null;
                             const _dependencyAbstract = dependencyAbstract[0];
-                            let dependencyArgs = [];
 
                             if (hasDependencyArgs) {
-                                dependencyArgs = args[0][_dependencyAbstract];
-
-                                if (isEmpty(dependencyArgs)) {
-                                    dependencyArgs = [];
-                                } else {
-                                    if (!isArray(dependencyArgs)) {
-                                        dependencyArgs = [dependencyArgs]
-                                    }
-                                }
+                                dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
                             }
 
                             dependencyArgs = [...dependencyAbstract.slice(2), ...dependencyArgs]
-
                             dependencyConcrete = this.resolveBy(_dependencyAbstract, dependencyState, ...dependencyArgs);
                         }
 
@@ -317,43 +321,46 @@ class DefaultLocator extends LocatorBase {
                     }
 
                     if (isObject(dependencyAbstract)) {
-                        let dependencyArgs = [];
                         const _dependencyAbstract = dependencyAbstract.dependency;
 
                         if (isFunction(_dependencyAbstract)) {
                             if (hasDependencyArgs) {
-                                dependencyArgs = args[0][_dependencyAbstract];
-
-                                if (isEmpty(dependencyArgs)) {
-                                    dependencyArgs = [];
-                                } else {
-                                    if (!isArray(dependencyArgs)) {
-                                        dependencyArgs = [dependencyArgs]
-                                    }
-                                }
+                                dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
                             }
 
                             if (isArray(dependencyAbstract.args)) {
                                 dependencyArgs = [...dependencyAbstract.args, ...dependencyArgs]
+                            } else {
+                                dependencyArgs = [...[dependencyAbstract.args], ...dependencyArgs]
                             }
 
                             if (dependencyAbstract.state == null) {
-                                dependencyConcrete = this.resolve(dependencyAbstract.dependency, ...dependencyAbstract.args);
+                                dependencyConcrete = this.resolve(_dependencyAbstract, ...dependencyArgs);
                             } else {
-                                dependencyConcrete = this.resolveBy(dependencyAbstract.dependency, dependencyAbstract.state, ...dependencyAbstract.args);
+                                dependencyConcrete = this.resolveBy(_dependencyAbstract, dependencyAbstract.state, ...dependencyArgs);
                             }
                         }
 
                         break;
                     }
 
-                    dependencyConcrete = this.resolve(dependencyAbstract);
+                    if (hasDependencyArgs) {
+                        dependencyArgs = this._getDependencyArgs(dependencyAbstract, args);
+                    }
+
+                    dependencyConcrete = this.resolve(dependencyAbstract, ...dependencyArgs);
                 } while (false);
 
                 dependencies.push(dependencyConcrete);
             }
 
-            const _args = [...dependencies, ...args];
+            let _args;
+
+            if (hasDependencyArgs) {
+                _args = [...dependencies, ...args[0].args];
+            } else {
+                _args = [...dependencies, ...args];
+            }
 
             result = new entry.concretion(..._args);
         } else {
