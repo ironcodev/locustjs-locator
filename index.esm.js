@@ -286,8 +286,22 @@ class DefaultLocator extends LocatorBase {
             result = [];
         } else {
             if (!isArray(result)) {
-                result = [result]
+                if (isObject(result) && isArray(result.args)) {
+                    result = result.args;
+                } else {
+                    result = [result]
+                }
             }
+        }
+
+        return result;
+    }
+    _getDependencyState(abstraction, args) {
+        let result = null;
+        let dependencyConfig = args[0][abstraction];
+
+        if (isObject(dependencyConfig)) {
+            result = dependencyConfig.state;
         }
 
         return result;
@@ -300,58 +314,65 @@ class DefaultLocator extends LocatorBase {
             const dependencies = [];
 
             for (let dependencyAbstract of entry.abstraction.dependencies) {
-                let dependencyConcrete;
-                let dependencyArgs = [];
+                let _dependencyConcrete;
+                let _dependencyArgs = [];
+                let _dependencyState = null;
+                let _dependencyAbstract;
 
                 do {
                     if (isArray(dependencyAbstract)) {
                         if (dependencyAbstract.length) {
-                            const dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1] : null;
-                            const _dependencyAbstract = dependencyAbstract[0];
+                            _dependencyAbstract = dependencyAbstract[0];
 
                             if (hasDependencyArgs) {
-                                dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
+                                _dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
+                                _dependencyState = this._getDependencyState(_dependencyAbstract, args);
                             }
 
-                            dependencyArgs = [...dependencyAbstract.slice(2), ...dependencyArgs]
-                            dependencyConcrete = this.resolveBy(_dependencyAbstract, dependencyState, ...dependencyArgs);
+                            if (_dependencyState == null) {
+                                _dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1] : null;
+                            }
+
+                            _dependencyArgs = [...dependencyAbstract.slice(2), ..._dependencyArgs]
                         }
 
                         break;
                     }
 
                     if (isObject(dependencyAbstract)) {
-                        const _dependencyAbstract = dependencyAbstract.dependency;
+                        _dependencyAbstract = dependencyAbstract.dependency;
 
-                        if (isFunction(_dependencyAbstract)) {
-                            if (hasDependencyArgs) {
-                                dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
-                            }
+                        if (hasDependencyArgs) {
+                            _dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
+                            _dependencyState = this._getDependencyState(_dependencyAbstract, args);
+                        }
 
-                            if (isArray(dependencyAbstract.args)) {
-                                dependencyArgs = [...dependencyAbstract.args, ...dependencyArgs]
-                            } else {
-                                dependencyArgs = [...[dependencyAbstract.args], ...dependencyArgs]
-                            }
+                        if (_dependencyState == null) {
+                            _dependencyState = dependencyAbstract.state
+                        }
 
-                            if (dependencyAbstract.state == null) {
-                                dependencyConcrete = this.resolve(_dependencyAbstract, ...dependencyArgs);
-                            } else {
-                                dependencyConcrete = this.resolveBy(_dependencyAbstract, dependencyAbstract.state, ...dependencyArgs);
-                            }
+                        if (isArray(dependencyAbstract.args)) {
+                            _dependencyArgs = [...dependencyAbstract.args, ..._dependencyArgs]
+                        } else {
+                            _dependencyArgs = [...[dependencyAbstract.args], ..._dependencyArgs]
                         }
 
                         break;
                     }
 
-                    if (hasDependencyArgs) {
-                        dependencyArgs = this._getDependencyArgs(dependencyAbstract, args);
-                    }
+                    _dependencyAbstract = dependencyAbstract;
 
-                    dependencyConcrete = this.resolve(dependencyAbstract, ...dependencyArgs);
+                    if (hasDependencyArgs) {
+                        _dependencyArgs = this._getDependencyArgs(dependencyAbstract, args);
+                        _dependencyState = this._getDependencyState(_dependencyAbstract, args);
+                    }
                 } while (false);
 
-                dependencies.push(dependencyConcrete);
+                if (isFunction(_dependencyAbstract)) {
+                    _dependencyConcrete = this.resolveBy(_dependencyAbstract, _dependencyState, ..._dependencyArgs);
+
+                    dependencies.push(_dependencyConcrete);
+                }
             }
 
             let _args;

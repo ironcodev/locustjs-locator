@@ -472,8 +472,24 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
         result = [];
       } else {
         if (!(0, _locustjsBase.isArray)(result)) {
-          result = [result];
+          if ((0, _locustjsBase.isObject)(result) && (0, _locustjsBase.isArray)(result.args)) {
+            result = result.args;
+          } else {
+            result = [result];
+          }
         }
+      }
+
+      return result;
+    }
+  }, {
+    key: "_getDependencyState",
+    value: function _getDependencyState(abstraction, args) {
+      var result = null;
+      var dependencyConfig = args[0][abstraction];
+
+      if ((0, _locustjsBase.isObject)(dependencyConfig)) {
+        result = dependencyConfig.state;
       }
 
       return result;
@@ -498,58 +514,67 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
         try {
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
             var dependencyAbstract = _step.value;
-            var dependencyConcrete = void 0;
-            var dependencyArgs = [];
+
+            var _dependencyConcrete = void 0;
+
+            var _dependencyArgs = [];
+            var _dependencyState = null;
+
+            var _dependencyAbstract = void 0;
 
             do {
               if ((0, _locustjsBase.isArray)(dependencyAbstract)) {
                 if (dependencyAbstract.length) {
-                  var dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1] : null;
-                  var _dependencyAbstract = dependencyAbstract[0];
+                  _dependencyAbstract = dependencyAbstract[0];
 
                   if (hasDependencyArgs) {
-                    dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
+                    _dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
+                    _dependencyState = this._getDependencyState(_dependencyAbstract, args);
                   }
 
-                  dependencyArgs = [].concat(_toConsumableArray(dependencyAbstract.slice(2)), _toConsumableArray(dependencyArgs));
-                  dependencyConcrete = this.resolveBy.apply(this, [_dependencyAbstract, dependencyState].concat(_toConsumableArray(dependencyArgs)));
+                  if (_dependencyState == null) {
+                    _dependencyState = dependencyAbstract.length > 1 ? dependencyAbstract[1] : null;
+                  }
+
+                  _dependencyArgs = [].concat(_toConsumableArray(dependencyAbstract.slice(2)), _toConsumableArray(_dependencyArgs));
                 }
 
                 break;
               }
 
               if ((0, _locustjsBase.isObject)(dependencyAbstract)) {
-                var _dependencyAbstract2 = dependencyAbstract.dependency;
+                _dependencyAbstract = dependencyAbstract.dependency;
 
-                if ((0, _locustjsBase.isFunction)(_dependencyAbstract2)) {
-                  if (hasDependencyArgs) {
-                    dependencyArgs = this._getDependencyArgs(_dependencyAbstract2, args);
-                  }
+                if (hasDependencyArgs) {
+                  _dependencyArgs = this._getDependencyArgs(_dependencyAbstract, args);
+                  _dependencyState = this._getDependencyState(_dependencyAbstract, args);
+                }
 
-                  if ((0, _locustjsBase.isArray)(dependencyAbstract.args)) {
-                    dependencyArgs = [].concat(_toConsumableArray(dependencyAbstract.args), _toConsumableArray(dependencyArgs));
-                  } else {
-                    dependencyArgs = [dependencyAbstract.args].concat(_toConsumableArray(dependencyArgs));
-                  }
+                if (_dependencyState == null) {
+                  _dependencyState = dependencyAbstract.state;
+                }
 
-                  if (dependencyAbstract.state == null) {
-                    dependencyConcrete = this.resolve.apply(this, [_dependencyAbstract2].concat(_toConsumableArray(dependencyArgs)));
-                  } else {
-                    dependencyConcrete = this.resolveBy.apply(this, [_dependencyAbstract2, dependencyAbstract.state].concat(_toConsumableArray(dependencyArgs)));
-                  }
+                if ((0, _locustjsBase.isArray)(dependencyAbstract.args)) {
+                  _dependencyArgs = [].concat(_toConsumableArray(dependencyAbstract.args), _toConsumableArray(_dependencyArgs));
+                } else {
+                  _dependencyArgs = [dependencyAbstract.args].concat(_toConsumableArray(_dependencyArgs));
                 }
 
                 break;
               }
 
-              if (hasDependencyArgs) {
-                dependencyArgs = this._getDependencyArgs(dependencyAbstract, args);
-              }
+              _dependencyAbstract = dependencyAbstract;
 
-              dependencyConcrete = this.resolve.apply(this, [dependencyAbstract].concat(_toConsumableArray(dependencyArgs)));
+              if (hasDependencyArgs) {
+                _dependencyArgs = this._getDependencyArgs(dependencyAbstract, args);
+                _dependencyState = this._getDependencyState(_dependencyAbstract, args);
+              }
             } while (false);
 
-            dependencies.push(dependencyConcrete);
+            if ((0, _locustjsBase.isFunction)(_dependencyAbstract)) {
+              _dependencyConcrete = this.resolveBy.apply(this, [_dependencyAbstract, _dependencyState].concat(_toConsumableArray(_dependencyArgs)));
+              dependencies.push(_dependencyConcrete);
+            }
           }
         } catch (err) {
           _iterator.e(err);

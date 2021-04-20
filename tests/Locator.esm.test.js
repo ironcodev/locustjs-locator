@@ -1,100 +1,23 @@
 import { DefaultLocator, DefaultStorage, Resolve } from '../index.esm.js';
-
-class FooServiceAbstract {
-    constructor(code, size, num) {
-        this.code = code;
-        this.size = size;
-        this.num = num;
-    }
-}
-class FooServiceConcreteIndependent { }
-class FooServiceConcrete extends FooServiceAbstract {
-    constructor(...args) {
-        super(...args);
-    }
-}
-// ---------------------------------------------------
-class BarServiceAbstract {
-    constructor(name) {
-        this.name = name;
-    }
-}
-class BarServiceConcrete extends BarServiceAbstract {
-    constructor(name) {
-        super(name);
-    }
-}
-// ---------------------------------------------------
-class BazServiceAbstract1 {
-    constructor(fooService, barService) {
-        this.fooService = fooService;
-        this.barService = barService;
-    }
-}
-BazServiceAbstract1.dependencies = [
+import {
     FooServiceAbstract,
-    BarServiceAbstract
-];
-class BazServiceConcrete1 extends BazServiceAbstract1 { }
-// ---------------------------------------------------
-class BazServiceAbstract2 {
-    constructor(fooService, barService) {
-        this.fooService = fooService;
-        this.barService = barService;
-    }
-}
-BazServiceAbstract2.dependencies = [
-    FooServiceAbstract,
-    [BarServiceAbstract, 1]
-];
-class BazServiceConcrete2 extends BazServiceAbstract2 { }
-// ---------------------------------------------------
-class BazServiceAbstract3 {
-    constructor(fooService, barService) {
-        this.fooService = fooService;
-        this.barService = barService;
-    }
-}
-BazServiceAbstract3.dependencies = [
-    [FooServiceAbstract, null, 10, 20],
-    [BarServiceAbstract, null, 'B1']
-];
-class BazServiceConcrete3 extends BazServiceAbstract3 { }
-// ---------------------------------------------------
-class BazServiceAbstract4 {
-    constructor(fooService, barService) {
-        this.fooService = fooService;
-        this.barService = barService;
-    }
-}
-BazServiceAbstract4.dependencies = [
-    [FooServiceAbstract, 1, 10, 20],
-    {
-        dependency: BarServiceAbstract,
-        state: 2,
-        args: ['B1']
-    }
-];
-class BazServiceConcrete4 extends BazServiceAbstract4 { }
-// ---------------------------------------------------
-class BazServiceAbstract5 {
-    constructor(fooService, barService, title, desc) {
-        this.fooService = fooService;
-        this.barService = barService;
-        this.title = title;
-        this.desc = desc;
-    }
-}
-BazServiceAbstract5.dependencies = [
-    {
-        dependency: FooServiceAbstract,
-        state: 2,
-        args: [10]
-    },
-    BarServiceAbstract
-];
-class BazServiceConcrete5 extends BazServiceAbstract5 { }
-// ---------------------------------------------------
+    FooServiceConcreteIndependent,
+    FooServiceConcrete,
+    BarServiceAbstract,
+    BarServiceConcrete,
+    BazServiceAbstract1,
+    BazServiceConcrete1,
+    BazServiceAbstract2,
+    BazServiceConcrete2,
+    BazServiceAbstract3,
+    BazServiceConcrete3,
+    BazServiceAbstract4,
+    BazServiceConcrete4,
+    BazServiceAbstract5,
+    BazServiceConcrete5,
+    BazServiceAbstract6,
+    BazServiceConcrete6
+} from './SampleServices';
 
 // this IIF is able to test a locator thoroughly.
 // if a new locator is developed, in order to test it
@@ -475,6 +398,28 @@ class BazServiceConcrete5 extends BazServiceAbstract5 { }
                 expect(x.barService.name).toBe('bar-name');
             });
 
+            test('register(A, B): dependencies should be resolved automatically <ex.6>', () => {
+                const locator = locatorFactoryConfig.factory();
+
+                locator.register(FooServiceAbstract, FooServiceConcrete, Resolve.PerRequest, 2);
+                locator.register(BarServiceAbstract, BarServiceConcrete, Resolve.PerRequest);
+                locator.register(BazServiceAbstract6, BazServiceConcrete6);
+
+                const x = locator.resolve(BazServiceAbstract6, {
+                    args: ['baz-title'],
+                    [FooServiceAbstract]: { state: 2, args: [10, 20, 30] },
+                    [BarServiceAbstract]: ['bar-name']
+                });
+
+                expect(x).toBeDefined();
+                expect(x.title).toBe('baz-title');
+                expect(x.fooService).toBeDefined();
+                expect(x.fooService.code).toBe(10);
+                expect(x.fooService.size).toBe(20);
+                expect(x.fooService.num).toBe(30);
+                expect(x.barService).toBeDefined();
+                expect(x.barService.name).toBe('bar-name');
+            });
         });
     }
 })({    // factory config item to test DefaultLocator class
