@@ -133,6 +133,12 @@ var LocatorBase = /*#__PURE__*/function () {
       (0, _locustjsException.throwNotImplementedException)('exists');
     }
   }, {
+    key: "indexOf",
+    value: function indexOf(abstraction) {
+      var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      (0, _locustjsException.throwNotImplementedException)('indexOf');
+    }
+  }, {
     key: "getLocalStorage",
     value: function getLocalStorage() {
       (0, _locustjsException.throwNotImplementedException)('getLocalStorage');
@@ -632,7 +638,11 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
           resolveType: resolveType,
           state: state
         });
+
+        return this.__entries.length - 1;
       }
+
+      return -1;
     }
   }, {
     key: "registerFactory",
@@ -650,7 +660,11 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
           resolveType: resolveType,
           state: state
         });
+
+        return this.__entries.length - 1;
       }
+
+      return -1;
     }
   }, {
     key: "registerInstance",
@@ -668,7 +682,11 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
           resolveType: resolveType,
           state: state
         });
+
+        return this.__entries.length - 1;
       }
+
+      return -1;
     }
   }, {
     key: "getConfig",
@@ -747,31 +765,47 @@ var DefaultLocator = /*#__PURE__*/function (_LocatorBase) {
       return this.resolveBy.apply(this, [abstraction, null].concat(args));
     }
   }, {
-    key: "remove",
-    value: function remove(abstraction) {
+    key: "indexOf",
+    value: function indexOf(abstraction) {
       var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
-      var index = this.__entries.findIndex(function (e) {
+      var result = this.__entries.findIndex(function (e) {
         return e.abstraction === abstraction && e.state == state;
       });
 
-      if (index >= 0) {
-        this.__entries.splice(index, 1);
+      return result;
+    }
+  }, {
+    key: "remove",
+    value: function remove(abstraction) {
+      var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      var result = false;
 
-        return true;
+      if ((0, _locustjsBase.isNumeric)(abstraction)) {
+        var index = parseInt(abstraction);
+
+        if (index >= 0 && index < this.__entries.length) {
+          this.__entries.splice(index, 1);
+
+          result = true;
+        }
+      } else {
+        var _index = this.indexOf(abstraction, state);
+
+        if (_index >= 0) {
+          this.__entries.splice(_index, 1);
+
+          result = true;
+        }
       }
 
-      return false;
+      return result;
     }
   }, {
     key: "exists",
     value: function exists(abstraction) {
       var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-      var index = this.__entries.findIndex(function (e) {
-        return e.abstraction === abstraction && e.state == state;
-      });
-
+      var index = this.indexOf(abstraction, state);
       return index >= 0;
     }
   }]);

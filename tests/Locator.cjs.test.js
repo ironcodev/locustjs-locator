@@ -55,7 +55,7 @@ const {
 
             // --------------------- remove -------------------
 
-            test('remove(): removing an existing entry', () => {
+            test('remove(): removing an existing entry by its abstraction', () => {
                 const locator = locatorFactoryConfig.factory();
 
                 locator.register(FooServiceAbstract, FooServiceConcrete);
@@ -66,6 +66,36 @@ const {
 
                 expect(result).toBe(true);
                 expect(exists).toBe(false);
+            });
+
+            test('remove(): removing an existing entry by its index', () => {
+                const locator = locatorFactoryConfig.factory();
+
+                const index = locator.register(FooServiceAbstract, FooServiceConcrete);
+
+                const result = locator.remove(index);
+
+                const exists = locator.exists(FooServiceAbstract);
+
+                expect(result).toBe(true);
+                expect(exists).toBe(false);
+            });
+
+            // --------------------- indexOf -------------------
+
+            test('indexOf(): returns index of a registration entry', () => {
+                const locator = locatorFactoryConfig.factory();
+
+                const r1 = locator.register(FooServiceAbstract, FooServiceConcrete);
+                const r2 = locator.register(FooServiceAbstract, FooServiceConcrete, Resolve.PerRequest, 1);
+
+                const index1 = locator.indexOf(FooServiceAbstract);
+                const index2 = locator.indexOf(FooServiceAbstract, 1);
+
+                expect(r1).toBe(0);
+                expect(r2).toBe(1);
+                expect(index1).toBe(0);
+                expect(index2).toBe(1);
             });
 
             // --------------------- args for constructor -------------------

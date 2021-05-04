@@ -1,4 +1,4 @@
-import { isArray, isFunction, isEmpty, isSubClassOf, isSomeObject, isObject } from 'locustjs-base'
+import { isArray, isFunction, isEmpty, isSubClassOf, isSomeObject, isObject, isNumeric } from 'locustjs-base'
 import { throwIfInstantiateAbstract, throwNotImplementedException } from 'locustjs-exception';
 import Enum from 'locustjs-enum';
 
@@ -43,6 +43,9 @@ class LocatorBase {
     }
     exists(abstraction, state = null) {
         throwNotImplementedException('exists');
+    }
+    indexOf(abstraction, state = null) {
+        throwNotImplementedException('indexOf');
     }
     getLocalStorage() {
         throwNotImplementedException('getLocalStorage');
@@ -410,7 +413,11 @@ class DefaultLocator extends LocatorBase {
 
         if (!this._registrationExistence(abstraction, concretion, null, null, resolveType, state)) {
             this.__entries.push({ abstraction, concretion, resolveType, state });
+
+            return this.__entries.length - 1;
         }
+
+        return -1;
     }
     registerFactory(abstraction, factory, resolveType = Resolve.PerRequest, state = null) {
         abstraction = this._validateAbstraction(abstraction);
@@ -419,7 +426,11 @@ class DefaultLocator extends LocatorBase {
 
         if (!this._registrationExistence(abstraction, null, factory, null, resolveType, state)) {
             this.__entries.push({ abstraction, factory, resolveType, state });
+
+            return this.__entries.length - 1;
         }
+
+        return -1;
     }
     registerInstance(abstraction, instance, resolveType = Resolve.PerRequest, state = null) {
         abstraction = this._validateAbstraction(abstraction);
@@ -428,7 +439,11 @@ class DefaultLocator extends LocatorBase {
 
         if (!this._registrationExistence(abstraction, null, null, instance, resolveType, state)) {
             this.__entries.push({ abstraction, instance, resolveType, state });
+
+            return this.__entries.length - 1;
         }
+
+        return -1;
     }
     getConfig(abstraction, state = null) {
         const result = this.__entries.find(e => e.abstraction === abstraction && e.state == state);
@@ -490,19 +505,36 @@ class DefaultLocator extends LocatorBase {
     resolve(abstraction, ...args) {
         return this.resolveBy(abstraction, null, ...args)
     }
+    indexOf(abstraction, state = null) {
+        const result = this.__entries.findIndex(e => e.abstraction === abstraction && e.state == state);
+
+        return result;
+    }
     remove(abstraction, state = null) {
-        const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state == state);
+        let result = false;
 
-        if (index >= 0) {
-            this.__entries.splice(index, 1);
+        if (isNumeric(abstraction)) {
+            const index = parseInt(abstraction);
 
-            return true;
+            if (index >= 0 && index < this.__entries.length) {
+                this.__entries.splice(index, 1);
+
+                result = true;
+            }
+        } else {
+            const index = this.indexOf(abstraction, state);
+
+            if (index >= 0) {
+                this.__entries.splice(index, 1);
+
+                result = true;
+            }
         }
 
-        return false;
+        return result;
     }
     exists(abstraction, state = null) {
-        const index = this.__entries.findIndex(e => e.abstraction === abstraction && e.state == state);
+        const index = this.indexOf(abstraction, state);
 
         return index >= 0;
     }
