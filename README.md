@@ -74,9 +74,9 @@ import { FooServiceBase, FooServiceRemote, FooServiceFake } from './services/foo
 
 configureLocator(mode) {
   if (mode.toLowerCase() == 'production') {
-    Locator.register(FooServiceBase, FooServiceRemote);
+    Locator.Instance.register(FooServiceBase, FooServiceRemote);
   } else {
-    Locator.register(FooServiceBase, FooServiceFake);
+    Locator.Instance.register(FooServiceBase, FooServiceFake);
   }
 }
 
