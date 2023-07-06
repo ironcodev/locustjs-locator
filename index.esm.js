@@ -1,6 +1,6 @@
-import { isArray, isFunction, isEmpty, isSubClassOf, isSomeObject, isObject, isNumeric } from 'locustjs-base'
-import { throwIfInstantiateAbstract, throwNotImplementedException } from 'locustjs-exception';
-import Enum from 'locustjs-enum';
+import { isArray, isFunction, isEmpty, isSubClassOf, isSomeObject, isObject, isNumeric } from '@locustjs/base'
+import { throwIfInstantiateAbstract, throwNotImplementedException } from '@locustjs/exception';
+import Enum from '@locustjs/enum';
 
 const Resolve = Enum.define({
     PerRequest: 0,  // new instance for each request
