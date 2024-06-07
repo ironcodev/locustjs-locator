@@ -675,7 +675,7 @@ var Locator = /*#__PURE__*/function () {
     _classCallCheck(this, Locator);
   }
   _createClass(Locator, null, [{
-    key: "Instance",
+    key: "instance",
     get: function get() {
       return __locator_instance;
     },

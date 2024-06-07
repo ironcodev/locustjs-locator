@@ -1,16 +1,16 @@
-# locustjs-locator
+# @locustjs/locator
 This library implements Service Locator pattern in javascript. Service Locator pattern is one of the ways of implementing IoC (inversion of control) and loose coupling.
 
 # Installation
 ```
-npm install locustjs-locator
+npm install @locustjs/locator
 ```
 # Classes
 | Class	| description |
 |-------|-------------|
 | `LocatorBase` | Base locator abstract class |
 | `DefaultLocator`| Default service locator implementation |
-| `Locator` | Static service locator class with a default singleton `Instance` that is by default an instance of `DefaultLocator` |
+| `Locator` | Static service locator class with a default singleton `instance` that is by default an instance of `DefaultLocator` |
 
 ## ResolveType enum
 ```javascript
@@ -69,14 +69,14 @@ export { FooServiceBase, FooServiceRemote, FooServiceFake }
 ```
 ./src/locator.config.js
 ```javascript
-import Locator from 'locustjs-locator';
+import Locator from '@locustjs/locator';
 import { FooServiceBase, FooServiceRemote, FooServiceFake } from './services/foo';
 
 configureLocator(mode) {
   if (mode.toLowerCase() == 'production') {
-    Locator.Instance.register(FooServiceBase, FooServiceRemote);
+    Locator.instance.register(FooServiceBase, FooServiceRemote);
   } else {
-    Locator.Instance.register(FooServiceBase, FooServiceFake);
+    Locator.instance.register(FooServiceBase, FooServiceFake);
   }
 }
 
@@ -94,7 +94,7 @@ configureLocator(exec_type)
 ./src/app.js
 ```javascript
 // FooService Usage
-import Locator from 'locustjs-locator';
+import Locator from '@locustjs/locator';
 import { FooServiceBase } from './services/foo';
 
 // Here, our code is independent of any foo service implementation.
@@ -102,7 +102,7 @@ import { FooServiceBase } from './services/foo';
 // service to develop our app. Whenever our rest api is developed, we
 // can switch to FooServiceRemote. No change is needed to be applied on app.js.
 
-const service = Locator.Instance.resolve(FooServiceBase);
+const service = Locator.instance.resolve(FooServiceBase);
 
 const foo = await service.getById(1);
 
@@ -114,12 +114,12 @@ console.log(foo)
 index.js
 ```javascript
 import ReactDOM from 'react-dom';
-import Locator, { Resolve } from 'locustjs-locator';
+import Locator, { Resolve } from '@locustjs/locator';
 import ColorServiceBase from './services/color/base.js';
 import ColorServiceDefault from './services/color/default.js';
 import App from './App';
 
-Locator.Instance.register(ColorServiceBase, ColorServiceDefault);
+Locator.instance.register(ColorServiceBase, ColorServiceDefault);
 
 ReactDOM.render(<App />, document.getElementById('root'));
 ```
@@ -128,13 +128,13 @@ App.js
 ```javascript
 import React, { Component } from 'react'
 import ColorServiceBase from './services/color/base.js';
-import Locator from 'locustjs-locator';
+import Locator from '@locustjs/locator';
 
 class App extends Component {
   constructor() {
     super();
     
-    this.service = Locator.Instance.resolve(ColorServiceBase);
+    this.service = Locator.instance.resolve(ColorServiceBase);
     this.state = {
       colors: []
     }

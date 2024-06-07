@@ -543,10 +543,10 @@ class DefaultLocator extends LocatorBase {
 let __locator_instance = new DefaultLocator();
 
 class Locator {
-    static get Instance() {
+    static get instance() {
         return __locator_instance;
     }
-    static set Instance(value) {
+    static set instance(value) {
         if (isEmpty(value)) {
             throw `no object given to be set as current locator.`
         } else if (!isFunction(value.constructor)) {
