@@ -1,5 +1,5 @@
 # @locustjs/locator
-This library implements Service Locator pattern in javascript. Service Locator pattern is one of the ways of implementing IoC (inversion of control) and loose coupling.
+This library implements `Service Locator pattern` in javascript as a method of dependency injection. `Service Locator pattern` is one of the different ways of implementing IoC (inversion of control) and achieving loose coupling in software development.
 
 # Installation
 ```
