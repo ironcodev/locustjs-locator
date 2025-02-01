@@ -115,8 +115,7 @@ index.js
 ```javascript
 import ReactDOM from 'react-dom';
 import Locator, { Resolve } from '@locustjs/locator';
-import ColorServiceBase from './services/color/base.js';
-import ColorServiceDefault from './services/color/default.js';
+import { ColorServiceBase, ColorServiceDefault } from './services/color';
 import App from './App';
 
 Locator.instance.register(ColorServiceBase, ColorServiceDefault);
@@ -126,40 +125,29 @@ ReactDOM.render(<App />, document.getElementById('root'));
 
 App.js
 ```javascript
-import React, { Component } from 'react'
-import ColorServiceBase from './services/color/base.js';
+import React, { useEffect, useState } from 'react'
+import { ColorServiceBase } from './services/color';
 import Locator from '@locustjs/locator';
 
-class App extends Component {
-  constructor() {
-    super();
-    
-    this.service = Locator.instance.resolve(ColorServiceBase);
-    this.state = {
-      colors: []
-    }
-  }
-  async componentDidMount() {
-    const colors = await this.service.getColors();
-    
-    this.setState({ colors });
-  }
-  render() {
+const App = () => {
+  const service = useMemo(() => Locator.instance.resolve(ColorServiceBase), []);
+  const [colors, setColors] = useState([]);
+  useEffect(() => this.service.getColors().then(colors => setColors(colors)), []);
+
     return (
-		<React.Fragment>
+		<>
 			<h3>Colors</h3>
 			<ul>
-				{this.state.colors.map(x => <li>{x}</li>)}
+				{colors.map(x => <li>{x}</li>)}
 			</ul>
-		 </React.Fragment>
+		 </>
     );
-  }
 }
 
 export default App;
 ```
 
-/services/color/base.js
+/services/color/ColorServiceBase.js
 ```javascript
 class ColorServiceBase {
   constructor() {
@@ -175,9 +163,9 @@ class ColorServiceBase {
 export default ColorServiceBase;
 ```
 
-/services/color/default.js
+/services/color/ColorServiceDefault.js
 ```javascript
-import ColorServiceBase from './base.js';
+import ColorServiceBase from './ColorServiceBase.js';
 
 class ColorServiceDefault extends ColorServiceBase {
   async getColors() {
@@ -191,9 +179,9 @@ class ColorServiceDefault extends ColorServiceBase {
 export default ColorServiceDefault;
 ```
 
-/services/color/fake.js
+/services/color/ColorServiceFake.js
 ```javascript
-import ColorServiceBase from './base.js';
+import ColorServiceBase from './ColorServiceDefault';
 
 class ColorServiceFake extends ColorServiceBase {
   getColors() {
@@ -204,6 +192,15 @@ class ColorServiceFake extends ColorServiceBase {
 }
 
 export default ColorServiceFake;
+```
+
+/services/color/index.js
+```javascript
+import ColorServiceBase from './ColorServiceBase.js';
+import ColorServiceDefault from './ColorServiceDefault.js';
+import ColorServiceFake from './ColorServiceFake.js';
+
+export { ColorServiceBase, ColorServiceDefault, ColorServiceFake }
 ```
 
 Here, the App component is completely decoupled from its ColorService dependency.
