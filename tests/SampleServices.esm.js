@@ -107,6 +107,40 @@ BazServiceAbstract6.dependencies = [
 ];
 class BazServiceConcrete6 extends BazServiceAbstract6 { }
 
+// ---------------------------------------------------
+class Dep1 {
+    constructor() {
+        this.name = 'Dep1'
+    }
+}
+class Dep2 {
+    constructor() {
+        this.name = 'Dep2'
+    }
+}
+class Dep3 {
+    constructor() {
+        this.name = 'Dep3'
+    }
+}
+class GrandParent {
+    constructor(dep1) {
+        this.dep1 = dep1
+    }
+}
+GrandParent.dependencies = [Dep1]
+class Parent extends GrandParent {
+    constructor(dep2, dep3) {
+        super(new Dep1());
+
+        this.dep2 = dep2;
+        this.dep3 = dep3;
+    }
+}
+Parent.dependencies = [Dep2, Dep3]
+class Child extends Parent { }
+class GrandChild extends Child { }
+
 export {
     FooServiceAbstract,
     FooServiceConcreteIndependent,
@@ -124,5 +158,12 @@ export {
     BazServiceAbstract5,
     BazServiceConcrete5,
     BazServiceAbstract6,
-    BazServiceConcrete6
+    BazServiceConcrete6,
+    GrandParent,
+    Parent,
+    Child,
+    GrandChild,
+    Dep1,
+    Dep2,
+    Dep3
 }

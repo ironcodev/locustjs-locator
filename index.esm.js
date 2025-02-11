@@ -1,6 +1,6 @@
-import { isArray, isFunction, isEmpty, isSubClassOf, isSomeObject, isObject, isNumeric } from '@locustjs/base'
+import { isArray, isFunction, isEmpty, isSubClassOf, isSomeObject, isObject, isNumeric, isNullOrUndefined } from '@locustjs/base'
 import { throwIfInstantiateAbstract, throwNotImplementedException } from '@locustjs/exception';
-import Enum from '@locustjs/enum';
+import { Enum } from '@locustjs/enum';
 
 const Resolve = Enum.define({
     PerRequest: 0,  // new instance for each request
@@ -195,6 +195,10 @@ class DefaultLocator extends LocatorBase {
         return abstraction;
     }
     _validateConcretion(concretion, abstraction) {
+        if (isNullOrUndefined(concretion)) {
+            concretion = abstraction;
+        }
+
         if (!isFunction(concretion)) {
             throw `Invalid concretion (class or constructor function expected).`
         }
@@ -312,11 +316,22 @@ class DefaultLocator extends LocatorBase {
     _createInstance(entry, ...args) {
         let result;
         const hasDependencyArgs = args.length == 1 && isObject(args[0]) && isArray(args[0].args);
+        let declaredDependencies = []
+        let current = entry.abstraction;
 
-        if (isArray(entry.abstraction.dependencies)) {
+        while (current) {
+            if (isArray(current.dependencies)) {
+                declaredDependencies = current.dependencies;
+                break;
+            }
+
+            current = Object.getPrototypeOf(current);
+        }
+
+        if (declaredDependencies.length) {
             const dependencies = [];
 
-            for (let dependencyAbstract of entry.abstraction.dependencies) {
+            for (let dependencyAbstract of declaredDependencies) {
                 let _dependencyConcrete;
                 let _dependencyArgs = [];
                 let _dependencyState = null;

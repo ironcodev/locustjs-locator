@@ -16,8 +16,15 @@ const {
     BazServiceAbstract5,
     BazServiceConcrete5,
     BazServiceAbstract6,
-    BazServiceConcrete6
-} = require('./SampleServices');
+    BazServiceConcrete6,
+    GrandParent,
+    Parent,
+    Child,
+    Dep1,
+    Dep2,
+    Dep3,
+    GrandChild
+} = require('./SampleServices.cjs.js');
 
 // this IIF is able to test a locator thoroughly.
 // if a new locator is developed, in order to test it
@@ -450,6 +457,25 @@ const {
             expect(x.fooService.num).toBe(30);
             expect(x.barService).toBeDefined();
             expect(x.barService.name).toBe('bar-name');
+        });
+
+        test('register(A, B): dependencies should be detected through inheritance chain and should be resolved automatically <ex.7>', () => {
+            const locator = locatorFactoryConfig.factory();
+
+            locator.register(Child, GrandChild);
+            locator.register(Dep1);
+            locator.register(Dep2);
+            locator.register(Dep3);
+
+            const x = locator.resolve(Child);
+
+            expect(x).toBeDefined();
+            expect(x.dep1).toBeDefined();
+            expect(x.dep1 instanceof Dep1).toBeTruthy();
+            expect(x.dep2).toBeDefined();
+            expect(x.dep2 instanceof Dep2).toBeTruthy();
+            expect(x.dep3).toBeDefined();
+            expect(x.dep3 instanceof Dep3).toBeTruthy();
         });
     }
 })({    // factory config item to test DefaultLocator class
